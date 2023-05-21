@@ -1,0 +1,22 @@
+[package]
+name = "bramble"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { version = "0.10.1", features = ["dynamic_linking"] }
+bevy_ecs_tilemap = "0.10.0"
+bevy_rapier2d = "0.21.0"
+leafwing-input-manager = "0.9.2"
+maplit = "1.0.2"
+rand = "0.8.5"
+
+# Enable a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
+[profile.dev.package."*"]
+opt-level = 3
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

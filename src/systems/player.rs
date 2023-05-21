@@ -1,0 +1,60 @@
+use {
+    crate::{components::player::*, constants::player::*, prelude::*, rgb_u8},
+    bevy::prelude::*,
+    leafwing_input_manager::prelude::*,
+};
+
+pub fn spawn_player(mut cmds: Commands) {
+    cmds.spawn((
+        Player,
+        SpriteBundle {
+            sprite: Sprite {
+                color: rgb_u8!(255, 0, 255),
+                custom_size: Some(PLAYER_SIZE),
+                ..default()
+            },
+            ..default()
+        },
+        InputManagerBundle::<Action> {
+            action_state: ActionState::default(),
+            input_map: InputMap::default()
+                .insert_multiple([
+                    (MouseButton::Left, Action::Attack),
+                    (MouseButton::Right, Action::Interact),
+                ])
+                .insert_many_to_one([KeyCode::W, KeyCode::Up], Action::MoveUp)
+                .insert_many_to_one([KeyCode::S, KeyCode::Down], Action::MoveDown)
+                .insert_many_to_one([KeyCode::A, KeyCode::Left], Action::MoveLeft)
+                .insert_many_to_one([KeyCode::D, KeyCode::Right], Action::MoveRight)
+                .insert_many_to_one(
+                    [KeyCode::Plus, KeyCode::NumpadAdd, KeyCode::Equals],
+                    Action::ZoomIn,
+                )
+                .insert_many_to_one(
+                    [KeyCode::Minus, KeyCode::NumpadSubtract, KeyCode::Underline],
+                    Action::ZoomOut,
+                )
+                .build(),
+        },
+    ));
+}
+
+pub fn move_player(mut player_qry: Query<&mut Transform, With<Player>>, action_state_qry: Query<&ActionState<Action>, With<Player>>, time: Res<Time>) {
+    let mut player_transform = player_qry.single_mut();
+    let action_state = action_state_qry.single();
+    let dt = time.delta_seconds();
+    let mvmt_offset = DEFAULT_PLAYER_MOVE_AMOUNT * dt;
+
+    if action_state.pressed(Action::MoveUp) {
+        player_transform.translation.y += mvmt_offset;
+    }
+    if action_state.pressed(Action::MoveDown) {
+        player_transform.translation.y -= mvmt_offset;
+    }
+    if action_state.pressed(Action::MoveLeft) {
+        player_transform.translation.x -= mvmt_offset;
+    }
+    if action_state.pressed(Action::MoveRight) {
+        player_transform.translation.x += mvmt_offset;
+    }
+}
