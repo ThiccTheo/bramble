@@ -11,11 +11,12 @@ use {
     bevy_ecs_tilemap::prelude::*,
     bevy_rapier2d::prelude::*,
     leafwing_input_manager::prelude::*,
-    plugins::{main_camera::MainCameraPlugin, player::PlayerPlugin},
+    plugins::{
+        main_camera::MainCameraPlugin, player::PlayerPlugin,
+        world_generation::WorldGenerationPlugin,
+    },
     prelude::*,
 };
-
-use systems::tilemap::spawn_tilemap;
 
 fn main() {
     App::new()
@@ -29,9 +30,10 @@ fn main() {
         .add_state::<GameState>()
         .add_plugin(InputManagerPlugin::<Action>::default())
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
+        .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(TilemapPlugin)
         .add_plugin(MainCameraPlugin)
+        .add_plugin(WorldGenerationPlugin)
         .add_plugin(PlayerPlugin)
-        .add_system(spawn_tilemap.in_schedule(OnEnter(GameState::Playing)))
         .run();
 }

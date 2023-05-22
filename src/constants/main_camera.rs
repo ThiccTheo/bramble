@@ -1,5 +1,3 @@
-use bevy::prelude::*;
-
 pub const CAMERA_FOLLOW_SPEED: f32 = 10.;
 pub const CAMERA_ZOOM_AMOUNT: f32 = 5.;
 pub const DEFAULT_CAMERA_ZOOM: f32 = 1.;

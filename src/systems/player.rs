@@ -1,17 +1,20 @@
 use {
     crate::{
         components::player::*,
-        constants::{player::*, tilemap::ENTITY_LAYER},
+        constants::{player::*, world_generation::ENTITY_LAYER},
         prelude::*,
         rgb_u8,
     },
     bevy::prelude::*,
+    bevy_rapier2d::prelude::*,
     leafwing_input_manager::prelude::*,
 };
 
 pub fn spawn_player(mut cmds: Commands) {
     cmds.spawn((
         Player,
+        Collider::cuboid(PLAYER_SIZE.x / 2., PLAYER_SIZE.y / 2.),
+        KinematicCharacterController { ..default() },
         SpriteBundle {
             sprite: Sprite {
                 color: rgb_u8!(255, 0, 255),
