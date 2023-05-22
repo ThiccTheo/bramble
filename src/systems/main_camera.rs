@@ -31,16 +31,22 @@ pub fn follow_player(
 pub fn adjust_zoom(
     mut cam_qry: Query<&mut OrthographicProjection, With<MainCamera>>,
     action_state_qry: Query<&ActionState<Action>, With<Player>>,
-    time: Res<Time>
+    time: Res<Time>,
 ) {
     let mut projection = cam_qry.single_mut();
     let action_state = action_state_qry.single();
     let dt = time.delta_seconds();
 
     if action_state.pressed(Action::ZoomIn) {
-        projection.scale = f32::max(projection.scale - CAMERA_ZOOM_AMOUNT * dt, CAMERA_ZOOM_IN_LIMIT);
+        projection.scale = f32::max(
+            projection.scale - CAMERA_ZOOM_AMOUNT * dt,
+            CAMERA_ZOOM_IN_LIMIT,
+        );
     }
     if action_state.pressed(Action::ZoomOut) {
-        projection.scale = f32::min(projection.scale + CAMERA_ZOOM_AMOUNT * dt, CAMERA_ZOOM_OUT_LIMIT);
+        projection.scale = f32::min(
+            projection.scale + CAMERA_ZOOM_AMOUNT * dt,
+            CAMERA_ZOOM_OUT_LIMIT,
+        );
     }
 }

@@ -1,5 +1,10 @@
 use {
-    crate::{components::player::*, constants::player::*, prelude::*, rgb_u8},
+    crate::{
+        components::player::*,
+        constants::{player::*, tilemap::ENTITY_LAYER},
+        prelude::*,
+        rgb_u8,
+    },
     bevy::prelude::*,
     leafwing_input_manager::prelude::*,
 };
@@ -13,6 +18,7 @@ pub fn spawn_player(mut cmds: Commands) {
                 custom_size: Some(PLAYER_SIZE),
                 ..default()
             },
+            transform: Transform::from_xyz(0., 0., ENTITY_LAYER),
             ..default()
         },
         InputManagerBundle::<Action> {
@@ -39,7 +45,11 @@ pub fn spawn_player(mut cmds: Commands) {
     ));
 }
 
-pub fn move_player(mut player_qry: Query<&mut Transform, With<Player>>, action_state_qry: Query<&ActionState<Action>, With<Player>>, time: Res<Time>) {
+pub fn move_player(
+    mut player_qry: Query<&mut Transform, With<Player>>,
+    action_state_qry: Query<&ActionState<Action>, With<Player>>,
+    time: Res<Time>,
+) {
     let mut player_transform = player_qry.single_mut();
     let action_state = action_state_qry.single();
     let dt = time.delta_seconds();
