@@ -12,7 +12,7 @@ use {
     bevy_rapier2d::prelude::*,
     leafwing_input_manager::prelude::*,
     plugins::{
-        main_camera::MainCameraPlugin, player::PlayerPlugin,
+        main_camera::MainCameraPlugin, physics::PhysicsPlugin, player::PlayerPlugin,
         world_generation::WorldGenerationPlugin,
     },
     prelude::*,
@@ -30,7 +30,8 @@ fn main() {
         .add_state::<GameState>()
         .add_plugin(InputManagerPlugin::<Action>::default())
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        .add_plugin(RapierDebugRenderPlugin::default())
+        //.add_plugin(RapierDebugRenderPlugin::default())
+        .add_plugin(PhysicsPlugin)
         .add_plugin(TilemapPlugin)
         .add_plugin(MainCameraPlugin)
         .add_plugin(WorldGenerationPlugin)

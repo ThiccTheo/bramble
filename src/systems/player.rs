@@ -1,7 +1,10 @@
 use {
     crate::{
         components::player::*,
-        constants::{player::*, world_generation::ENTITY_LAYER},
+        constants::{
+            player::*,
+            world_generation::{ENTITY_LAYER, TILE_SIZE},
+        },
         prelude::*,
         rgb_u8,
     },
@@ -14,7 +17,16 @@ pub fn spawn_player(mut cmds: Commands) {
     cmds.spawn((
         Player,
         Collider::cuboid(PLAYER_SIZE.x / 2., PLAYER_SIZE.y / 2.),
-        KinematicCharacterController { ..default() },
+        KinematicCharacterController {
+            autostep: Some(CharacterAutostep {
+                max_height: CharacterLength::Absolute(TILE_SIZE.y),
+                min_width: CharacterLength::Absolute(TILE_SIZE.x),
+                ..default()
+            }),
+            snap_to_ground: Some(CharacterLength::Absolute(TILE_SIZE.y)),
+            ..default()
+        },
+        Velocity::default(),
         SpriteBundle {
             sprite: Sprite {
                 color: rgb_u8!(255, 0, 255),
@@ -35,6 +47,7 @@ pub fn spawn_player(mut cmds: Commands) {
                 .insert_many_to_one([KeyCode::S, KeyCode::Down], Action::MoveDown)
                 .insert_many_to_one([KeyCode::A, KeyCode::Left], Action::MoveLeft)
                 .insert_many_to_one([KeyCode::D, KeyCode::Right], Action::MoveRight)
+                .insert(KeyCode::Space, Action::Jump)
                 .insert_many_to_one(
                     [KeyCode::Plus, KeyCode::NumpadAdd, KeyCode::Equals],
                     Action::ZoomIn,
@@ -49,25 +62,26 @@ pub fn spawn_player(mut cmds: Commands) {
 }
 
 pub fn move_player(
-    mut player_qry: Query<&mut Transform, With<Player>>,
+    mut player_qry: Query<&mut Velocity, With<Player>>,
     action_state_qry: Query<&ActionState<Action>, With<Player>>,
-    time: Res<Time>,
 ) {
-    let mut player_transform = player_qry.single_mut();
+    let mut player_vel = player_qry.single_mut();
     let action_state = action_state_qry.single();
-    let dt = time.delta_seconds();
-    let mvmt_offset = DEFAULT_PLAYER_MOVE_AMOUNT * dt;
+    let mvmt_amt = DEFAULT_PLAYER_MOVE_AMOUNT;
 
-    if action_state.pressed(Action::MoveUp) {
-        player_transform.translation.y += mvmt_offset;
-    }
-    if action_state.pressed(Action::MoveDown) {
-        player_transform.translation.y -= mvmt_offset;
-    }
+    // if action_state.pressed(Action::MoveUp) {
+    //     player_vel.linvel.y += mvmt_amt;
+    // }
+    // if action_state.pressed(Action::MoveDown) {
+    //     player_vel.linvel.y -= mvmt_amt;
+    // }
     if action_state.pressed(Action::MoveLeft) {
-        player_transform.translation.x -= mvmt_offset;
+        player_vel.linvel.x -= mvmt_amt;
     }
     if action_state.pressed(Action::MoveRight) {
-        player_transform.translation.x += mvmt_offset;
+        player_vel.linvel.x += mvmt_amt;
+    }
+    if action_state.just_pressed(Action::Jump) && player_vel.linvel.y == 0. {
+        player_vel.linvel.y += 200.;
     }
 }
