@@ -62,10 +62,10 @@ pub fn spawn_player(mut cmds: Commands) {
 }
 
 pub fn move_player(
-    mut player_qry: Query<&mut Velocity, With<Player>>,
+    mut player_qry: Query<(&KinematicCharacterControllerOutput, &mut Velocity), With<Player>>,
     action_state_qry: Query<&ActionState<Action>, With<Player>>,
 ) {
-    let mut player_vel = player_qry.single_mut();
+    let Ok((player_ctrl_out, mut player_vel)) = player_qry.get_single_mut() else {return};
     let action_state = action_state_qry.single();
     let mvmt_amt = DEFAULT_PLAYER_MOVE_AMOUNT;
 
@@ -81,7 +81,7 @@ pub fn move_player(
     if action_state.pressed(Action::MoveRight) {
         player_vel.linvel.x += mvmt_amt;
     }
-    if action_state.just_pressed(Action::Jump) && player_vel.linvel.y == 0. {
+    if action_state.just_pressed(Action::Jump) && player_ctrl_out.grounded {
         player_vel.linvel.y += 200.;
     }
 }
