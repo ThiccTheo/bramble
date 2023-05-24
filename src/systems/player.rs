@@ -1,10 +1,7 @@
 use {
     crate::{
         components::player::*,
-        constants::{
-            player::*,
-            world_generation::{ENTITY_LAYER, TILE_SIZE},
-        },
+        constants::{player::*, world_generation::ENTITY_LAYER},
         prelude::*,
         rgb_u8,
     },
@@ -18,22 +15,23 @@ pub fn spawn_player(mut cmds: Commands) {
         Player,
         Collider::cuboid(PLAYER_SIZE.x / 2., PLAYER_SIZE.y / 2.),
         KinematicCharacterController {
-            autostep: Some(CharacterAutostep {
-                max_height: CharacterLength::Absolute(TILE_SIZE.y),
-                min_width: CharacterLength::Absolute(TILE_SIZE.x),
-                ..default()
-            }),
-            snap_to_ground: Some(CharacterLength::Absolute(TILE_SIZE.y)),
+            // autostep: Some(CharacterAutostep {
+            //     max_height: CharacterLength::Absolute(TILE_SIZE.y),
+            //     min_width: CharacterLength::Absolute(TILE_SIZE.x),
+            //     ..default()
+            // }),
+            // snap_to_ground: Some(CharacterLength::Absolute(TILE_SIZE.y)),
             ..default()
         },
         Velocity::default(),
+        Friction::new(DEFAULT_PLAYER_FRICTION_COEFFICIENT),
         SpriteBundle {
             sprite: Sprite {
                 color: rgb_u8!(255, 0, 255),
                 custom_size: Some(PLAYER_SIZE),
                 ..default()
             },
-            transform: Transform::from_xyz(0., 0., ENTITY_LAYER),
+            transform: Transform::from_xyz(0., 1000., ENTITY_LAYER),
             ..default()
         },
         InputManagerBundle::<Action> {
@@ -67,21 +65,14 @@ pub fn move_player(
 ) {
     let Ok((player_ctrl_out, mut player_vel)) = player_qry.get_single_mut() else {return};
     let action_state = action_state_qry.single();
-    let mvmt_amt = DEFAULT_PLAYER_MOVE_AMOUNT;
 
-    // if action_state.pressed(Action::MoveUp) {
-    //     player_vel.linvel.y += mvmt_amt;
-    // }
-    // if action_state.pressed(Action::MoveDown) {
-    //     player_vel.linvel.y -= mvmt_amt;
-    // }
     if action_state.pressed(Action::MoveLeft) {
-        player_vel.linvel.x -= mvmt_amt;
+        player_vel.linvel.x -= DEFAULT_PLAYER_MOVE_AMOUNT;
     }
     if action_state.pressed(Action::MoveRight) {
-        player_vel.linvel.x += mvmt_amt;
+        player_vel.linvel.x += DEFAULT_PLAYER_MOVE_AMOUNT;
     }
     if action_state.just_pressed(Action::Jump) && player_ctrl_out.grounded {
-        player_vel.linvel.y += 200.;
+        player_vel.linvel.y += DEFAULT_PLAYER_JUMP_POWER;
     }
 }
