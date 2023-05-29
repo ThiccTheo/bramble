@@ -1,10 +1,9 @@
-mod components;
-mod constants;
-mod events;
-mod plugins;
+mod graphics;
+mod main_camera;
+mod physics;
+mod player;
 mod prelude;
-mod resources;
-mod systems;
+mod world_generation;
 
 use {
     bevy::{
@@ -14,11 +13,12 @@ use {
     bevy_ecs_tilemap::prelude::*,
     bevy_rapier2d::prelude::*,
     leafwing_input_manager::prelude::*,
-    plugins::{
-        main_camera::MainCameraPlugin, physics::PhysicsPlugin, player::PlayerPlugin,
-        world_generation::WorldGenerationPlugin,
-    },
+    main_camera::MainCameraPlugin,
+    physics::PhysicsPlugin,
+    player::PlayerPlugin,
+    graphics::GraphicsPlugin,
     prelude::*,
+    world_generation::WorldGenerationPlugin,
 };
 
 fn main() {
@@ -32,7 +32,7 @@ fn main() {
         }))
         .edit_schedule(CoreSchedule::Main, |schedule| {
             schedule.set_build_settings(ScheduleBuildSettings {
-                ambiguity_detection: LogLevel::Warn,
+                ambiguity_detection: LogLevel::Ignore,
                 ..default()
             });
         })
@@ -41,6 +41,7 @@ fn main() {
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         //.add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(PhysicsPlugin)
+        .add_plugin(GraphicsPlugin)
         .add_plugin(TilemapPlugin)
         .add_plugin(MainCameraPlugin)
         .add_plugin(WorldGenerationPlugin)

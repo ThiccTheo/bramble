@@ -1,6 +1,6 @@
-use {crate::constants::physics::*, bevy::prelude::*, bevy_rapier2d::prelude::*};
+use {super::*, bevy::prelude::*, bevy_rapier2d::prelude::*};
 
-pub fn apply_velocity(
+pub(crate) fn apply_velocity(
     mut physics_qry: Query<(&mut KinematicCharacterController, &mut Velocity, &Friction)>,
     time: Res<Time>,
 ) {
@@ -24,7 +24,7 @@ pub fn apply_velocity(
     }
 }
 
-pub fn zero_velocity_on_collision(
+pub(crate) fn zero_velocity_on_collision(
     mut physics_qry: Query<(&KinematicCharacterControllerOutput, &mut Velocity)>,
 ) {
     for (char_ctrl_out, mut vel) in physics_qry.iter_mut() {

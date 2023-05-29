@@ -1,9 +1,16 @@
-use crate::systems::player::move_player;
+pub mod data;
+pub mod funcs;
 
+#[allow(unused_imports)]
 use {
-    crate::{prelude::*, systems::physics::*},
+    crate::{player::funcs::move_player, prelude::*},
     bevy::prelude::*,
+    data::*,
+    funcs::*,
 };
+
+const DEFAULT_TERMINAL_VELOCITY: Vec2 = Vec2::new(100., 300.);
+const DEFAULT_GRAVITY: f32 = 9.8;
 
 pub struct PhysicsPlugin;
 

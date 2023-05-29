@@ -1,16 +1,12 @@
 use {
-    crate::{
-        components::player::*,
-        constants::{player::*, world_generation::ENTITY_LAYER},
-        prelude::*,
-        rgb_u8,
-    },
+    super::*,
+    crate::{prelude::*, rgb_u8, world_generation::ENTITY_LAYER},
     bevy::prelude::*,
     bevy_rapier2d::prelude::*,
     leafwing_input_manager::prelude::*,
 };
 
-pub fn spawn_player(mut cmds: Commands) {
+pub(super) fn spawn_player(mut cmds: Commands) {
     cmds.spawn((
         Player,
         Collider::cuboid(PLAYER_SIZE.x / 2., PLAYER_SIZE.y / 2.),

@@ -1,8 +1,6 @@
 use {
-    crate::{
-        components::world_generation::*, constants::world_generation::*,
-        resources::world_generation::*,
-    },
+    super::*,
+    crate::{graphics::data::Interactable, physics::data::BoundingBox},
     bevy::prelude::*,
     bevy_ecs_tilemap::prelude::*,
     bevy_rapier2d::prelude::*,
@@ -13,11 +11,11 @@ use {
     rand::Rng,
 };
 
-pub fn generate_world_seed(mut cmds: Commands) {
+pub(super) fn generate_world_seed(mut cmds: Commands) {
     cmds.insert_resource(WorldSeed(rand::thread_rng().gen_range(u32::MIN..=u32::MAX)));
 }
 
-pub fn create_perlin_map(mut cmds: Commands, seed: Res<WorldSeed>) {
+pub(super) fn create_perlin_map(mut cmds: Commands, seed: Res<WorldSeed>) {
     let src_mod = Fbm::<Perlin>::new(seed.0);
     let perlin_map = PlaneMapBuilder::<_, 2>::new(&src_mod)
         .set_size(TILE_MAP_SIZE.x as usize, TILE_MAP_SIZE.y as usize)
@@ -26,7 +24,11 @@ pub fn create_perlin_map(mut cmds: Commands, seed: Res<WorldSeed>) {
     cmds.insert_resource(PerlinMap(perlin_map));
 }
 
-pub fn spawn_tilemap(mut cmds: Commands, assets: Res<AssetServer>, perlin_map: Res<PerlinMap>) {
+pub(super) fn spawn_tilemap(
+    mut cmds: Commands,
+    assets: Res<AssetServer>,
+    perlin_map: Res<PerlinMap>,
+) {
     let tilemap_tex = assets.load("images/tiles.png");
     let tilemap_id = cmds.spawn_empty().id();
     let mut tile_storage = TileStorage::empty(TILE_MAP_SIZE);
@@ -37,12 +39,16 @@ pub fn spawn_tilemap(mut cmds: Commands, assets: Res<AssetServer>, perlin_map: R
 
             if perlin_map.0.get_value(x as usize, y as usize) > 0.1 {
                 let tile_id = cmds
-                    .spawn((TileBundle {
-                        position: tile_pos,
-                        texture_index: TileTextureIndex(0),
-                        tilemap_id: TilemapId(tilemap_id),
-                        ..default()
-                    },))
+                    .spawn((
+                        TileBundle {
+                            position: tile_pos,
+                            texture_index: TileTextureIndex(0),
+                            tilemap_id: TilemapId(tilemap_id),
+                            ..default()
+                        },
+                        Interactable,
+                        BoundingBox::new(TILE_SIZE.x, TILE_SIZE.y),
+                    ))
                     .id();
                 tile_storage.set(&tile_pos, tile_id);
             }
@@ -71,7 +77,7 @@ pub fn spawn_tilemap(mut cmds: Commands, assets: Res<AssetServer>, perlin_map: R
     ));
 }
 
-pub fn add_colliders_to_tiles(
+pub(super) fn add_colliders_to_tiles(
     mut cmds: Commands,
     fg_tilemap_qry: Query<(&TileStorage, &Transform), With<ForegroundTilemap>>,
     tile_positions: Query<&TilePos>,
