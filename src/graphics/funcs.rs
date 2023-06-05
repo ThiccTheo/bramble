@@ -24,10 +24,4 @@ pub(super) fn highlight_target_on_hover(
             )
             .is_some()
         }) else { return };
-
-    println!(
-        "Hovering on hitbox at: ({x}, {y})",
-        x = interactable_transform.translation.x,
-        y = interactable_transform.translation.y
-    );
 }
