@@ -1,8 +1,8 @@
+mod game_state;
 mod graphics;
 mod main_camera;
 mod physics;
 mod player;
-mod prelude;
 mod world_generation;
 
 use {
@@ -12,12 +12,12 @@ use {
     },
     bevy_ecs_tilemap::prelude::*,
     bevy_rapier2d::prelude::*,
+    game_state::GameState,
+    graphics::GraphicsPlugin,
     leafwing_input_manager::prelude::*,
     main_camera::MainCameraPlugin,
     physics::PhysicsPlugin,
-    player::PlayerPlugin,
-    graphics::GraphicsPlugin,
-    prelude::*,
+    player::{PlayerAction, PlayerPlugin},
     world_generation::WorldGenerationPlugin,
 };
 
@@ -37,7 +37,7 @@ fn main() {
             });
         })
         .add_state::<GameState>()
-        .add_plugin(InputManagerPlugin::<Action>::default())
+        .add_plugin(InputManagerPlugin::<PlayerAction>::default())
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         //.add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(PhysicsPlugin)

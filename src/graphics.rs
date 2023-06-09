@@ -1,0 +1,79 @@
+use {
+    crate::{game_state::GameState, main_camera::MainCamera, physics::BoundingBox},
+    bevy::{prelude::*, sprite::collide_aabb, window::PrimaryWindow},
+};
+
+#[macro_export]
+macro_rules! rgb_u8 {
+    ($r:expr, $g:expr, $b:expr) => {
+        Color::Rgba {
+            red: $r as f32 / 255.,
+            green: $g as f32 / 255.,
+            blue: $b as f32 / 255.,
+            alpha: 255.,
+        }
+    };
+
+    ($r:expr, $g:expr, $b:expr, $a:expr) => {
+        Color::Rgba {
+            red: $r as f32 / 255.,
+            green: $g as f32 / 255.,
+            blue: $b as f32 / 255.,
+            alpha: $a as f32 / 255.,
+        }
+    };
+}
+
+const BACKGROUND_COLOR: Color = rgb_u8!(135, 206, 250);
+const OUTLINE_THICKNESS: Val = Val::Px(2.);
+
+pub(super) struct GraphicsPlugin;
+
+impl Plugin for GraphicsPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(ClearColor(BACKGROUND_COLOR))
+            .add_system(highlight_target_on_hover.in_set(OnUpdate(GameState::Playing)));
+    }
+}
+
+#[derive(Component)]
+pub struct Highlightable;
+
+fn add_outlines_to_highlightables(
+    mut cmds: Commands,
+    highlightable_qry: Query<(Entity, &BoundingBox), With<Highlightable>>,
+) {
+    for (id, hitbox) in highlightable_qry.iter() {
+        cmds.entity(id).with_children(|parent| {
+            parent.spawn(SpriteBundle {
+                sprite: Sprite {
+                    custom_size: Some(hitbox.clone().into()),
+                    ..default()
+                },
+                ..default()
+            });
+        });
+    }
+}
+
+fn highlight_target_on_hover(
+    interactable_qry: Query<(&BoundingBox, &Transform), With<Highlightable>>,
+    cam_qry: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
+    win_qry: Query<&Window, With<PrimaryWindow>>,
+) {
+    let (cam, cam_transform) = cam_qry.single();
+    let win = win_qry.single();
+    let Some(mouse_pos) = win.cursor_position().and_then(|pos| cam.viewport_to_world_2d(cam_transform, pos)) else { return };
+
+    let Some((_interactable_hitbox, _interactable_transform)) = interactable_qry
+        .iter()
+        .find(|(hitbox, transform)| {
+            collide_aabb::collide(
+                mouse_pos.extend(transform.translation.z),
+                Vec2::ONE,
+                transform.translation,
+                Vec2::new(hitbox.width, hitbox.height),
+            )
+            .is_some()
+        }) else { return };
+}

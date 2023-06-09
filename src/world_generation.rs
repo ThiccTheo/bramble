@@ -1,21 +1,58 @@
 use {
-    super::*,
-    crate::{graphics::data::Interactable, physics::data::BoundingBox},
+    crate::{game_state::GameState, graphics::Highlightable, physics::BoundingBox},
     bevy::prelude::*,
     bevy_ecs_tilemap::prelude::*,
     bevy_rapier2d::prelude::*,
     noise::{
-        utils::{NoiseMapBuilder, PlaneMapBuilder},
+        utils::{NoiseMap, NoiseMapBuilder, PlaneMapBuilder},
         Fbm, Perlin,
     },
     rand::Rng,
 };
 
-pub(super) fn generate_world_seed(mut cmds: Commands) {
+const TILE_SIZE: TilemapTileSize = TilemapTileSize { x: 16., y: 16. };
+const TILE_MAP_SIZE: TilemapSize = TilemapSize { x: 64, y: 64 };
+pub const BACKGROUND_LAYER: f32 = 1.;
+pub const FOREGROUND_LAYER: f32 = 2.;
+pub const ENTITY_LAYER: f32 = 3.;
+
+pub(super) struct WorldGenerationPlugin;
+
+impl Plugin for WorldGenerationPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(
+            (
+                generate_world_seed,
+                apply_system_buffers,
+                create_perlin_map,
+                apply_system_buffers,
+                spawn_tilemap,
+                apply_system_buffers,
+                add_colliders_to_tiles,
+            )
+                .chain()
+                .in_schedule(OnEnter(GameState::Playing)),
+        );
+    }
+}
+
+#[derive(Component)]
+pub struct BackgroundTilemap;
+
+#[derive(Component)]
+pub struct ForegroundTilemap;
+
+#[derive(Resource)]
+pub struct PerlinMap(pub NoiseMap);
+
+#[derive(Resource)]
+pub struct WorldSeed(pub u32);
+
+fn generate_world_seed(mut cmds: Commands) {
     cmds.insert_resource(WorldSeed(rand::thread_rng().gen_range(u32::MIN..=u32::MAX)));
 }
 
-pub(super) fn create_perlin_map(mut cmds: Commands, seed: Res<WorldSeed>) {
+fn create_perlin_map(mut cmds: Commands, seed: Res<WorldSeed>) {
     let src_mod = Fbm::<Perlin>::new(seed.0);
     let perlin_map = PlaneMapBuilder::<_, 2>::new(&src_mod)
         .set_size(TILE_MAP_SIZE.x as usize, TILE_MAP_SIZE.y as usize)
@@ -24,11 +61,7 @@ pub(super) fn create_perlin_map(mut cmds: Commands, seed: Res<WorldSeed>) {
     cmds.insert_resource(PerlinMap(perlin_map));
 }
 
-pub(super) fn spawn_tilemap(
-    mut cmds: Commands,
-    assets: Res<AssetServer>,
-    perlin_map: Res<PerlinMap>,
-) {
+fn spawn_tilemap(mut cmds: Commands, assets: Res<AssetServer>, perlin_map: Res<PerlinMap>) {
     let tilemap_tex = assets.load("images/tiles.png");
     let tilemap_id = cmds.spawn_empty().id();
     let mut tile_storage = TileStorage::empty(TILE_MAP_SIZE);
@@ -46,7 +79,7 @@ pub(super) fn spawn_tilemap(
                             tilemap_id: TilemapId(tilemap_id),
                             ..default()
                         },
-                        Interactable,
+                        Highlightable,
                         BoundingBox::new(TILE_SIZE.x, TILE_SIZE.y),
                     ))
                     .id();
@@ -77,7 +110,7 @@ pub(super) fn spawn_tilemap(
     ));
 }
 
-pub(super) fn add_colliders_to_tiles(
+fn add_colliders_to_tiles(
     mut cmds: Commands,
     fg_tilemap_qry: Query<(&TileStorage, &Transform), With<ForegroundTilemap>>,
     tile_positions: Query<&TilePos>,

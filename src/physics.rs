@@ -1,6 +1,60 @@
-use {super::*, bevy::prelude::*, bevy_rapier2d::prelude::*};
+use {
+    crate::{player::move_player, game_state::GameState},
+    bevy::prelude::*,
+    bevy_rapier2d::prelude::*,
+};
 
-pub(crate) fn apply_velocity(
+const DEFAULT_TERMINAL_VELOCITY: Vec2 = Vec2::new(100., 300.);
+const DEFAULT_GRAVITY: f32 = 9.8;
+
+pub(super) struct PhysicsPlugin;
+
+impl Plugin for PhysicsPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(
+            (
+                zero_velocity_on_collision.before(move_player),
+                apply_velocity.after(move_player),
+            )
+                .in_set(OnUpdate(GameState::Playing)),
+        );
+    }
+}
+
+#[derive(Component, Clone)]
+pub struct BoundingBox {
+    pub width: f32,
+    pub height: f32,
+}
+
+impl BoundingBox {
+    pub fn new(w: f32, h: f32) -> Self {
+        Self {
+            width: w,
+            height: h,
+        }
+    }
+}
+
+impl From<Vec2> for BoundingBox {
+    fn from(value: Vec2) -> Self {
+        Self {
+            width: value.x,
+            height: value.y,
+        }
+    }
+}
+
+impl From<BoundingBox> for Vec2 {
+    fn from(value: BoundingBox) -> Self {
+        Self {
+            x: value.width,
+            y: value.height,
+        }
+    }
+}
+
+fn apply_velocity(
     mut physics_qry: Query<(&mut KinematicCharacterController, &mut Velocity, &Friction)>,
     time: Res<Time>,
 ) {
@@ -24,7 +78,7 @@ pub(crate) fn apply_velocity(
     }
 }
 
-pub(crate) fn zero_velocity_on_collision(
+fn zero_velocity_on_collision(
     mut physics_qry: Query<(&KinematicCharacterControllerOutput, &mut Velocity)>,
 ) {
     for (char_ctrl_out, mut vel) in physics_qry.iter_mut() {
