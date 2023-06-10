@@ -14,12 +14,29 @@ const CAMERA_ZOOM_OFFSET: f32 = 0.4;
 const CAMERA_ZOOM_IN_LIMIT: f32 = DEFAULT_CAMERA_ZOOM - CAMERA_ZOOM_OFFSET;
 const CAMERA_ZOOM_OUT_LIMIT: f32 = DEFAULT_CAMERA_ZOOM + CAMERA_ZOOM_OFFSET;
 
+#[derive(SystemSet, Hash, Debug, PartialEq, Eq, Clone)]
+pub enum MainCameraSystemSet {
+    SpawnMainCamera,
+    FollowPlayer,
+    AdjustZoom,
+}
+
 pub(super) struct MainCameraPlugin;
 
 impl Plugin for MainCameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(spawn_main_camera)
-            .add_systems((follow_player, adjust_zoom).in_set(OnUpdate(GameState::Playing)));
+        app.add_system(
+            spawn_main_camera
+                .in_set(MainCameraSystemSet::SpawnMainCamera)
+                .in_schedule(OnEnter(GameState::Playing)),
+        )
+        .add_systems(
+            (
+                follow_player.in_set(MainCameraSystemSet::FollowPlayer),
+                adjust_zoom.in_set(MainCameraSystemSet::AdjustZoom),
+            )
+                .in_set(OnUpdate(GameState::Playing)),
+        );
     }
 }
 

@@ -9,11 +9,12 @@ use {
     bevy::{
         ecs::schedule::{LogLevel, ScheduleBuildSettings},
         prelude::*,
+        window::WindowResolution,
     },
     bevy_ecs_tilemap::prelude::*,
     bevy_rapier2d::prelude::*,
     game_state::GameState,
-    graphics::GraphicsPlugin,
+    graphics::{GraphicsPlugin, WINDOW_RESOLUTION},
     leafwing_input_manager::prelude::*,
     main_camera::MainCameraPlugin,
     physics::PhysicsPlugin,
@@ -26,6 +27,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: String::from("Bramble"),
+                resolution: WindowResolution::new(WINDOW_RESOLUTION.x, WINDOW_RESOLUTION.y),
                 ..default()
             }),
             ..default()

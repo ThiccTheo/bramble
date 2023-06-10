@@ -1,5 +1,10 @@
 use {
-    crate::{game_state::GameState, physics::BoundingBox, rgb_u8, world_generation::ENTITY_LAYER},
+    crate::{
+        game_state::GameState,
+        physics::{BoundingBox, PhysicsSystemSet},
+        rgb_u8,
+        world_generation::{ENTITY_LAYER, TILE_SIZE},
+    },
     bevy::prelude::*,
     bevy_rapier2d::prelude::*,
     leafwing_input_manager::prelude::*,
@@ -10,13 +15,25 @@ const DEFAULT_PLAYER_MOVE_AMOUNT: f32 = 20.;
 const DEFAULT_PLAYER_JUMP_POWER: f32 = 300.;
 const DEFAULT_PLAYER_FRICTION_COEFFICIENT: f32 = 10.;
 
+#[derive(SystemSet, Hash, Debug, PartialEq, Eq, Clone)]
+pub enum PlayerSystemSet {
+    SpawnPlayer,
+    MovePlayer,
+}
+
 pub(super) struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems((
-            spawn_player.in_schedule(OnEnter(GameState::Playing)),
-            move_player.in_set(OnUpdate(GameState::Playing)),
+            spawn_player
+                .in_set(PlayerSystemSet::SpawnPlayer)
+                .in_schedule(OnEnter(GameState::Playing)),
+            move_player
+                .in_set(PlayerSystemSet::MovePlayer)
+                .after(PhysicsSystemSet::ZeroVelocityOnCollision)
+                .before(PhysicsSystemSet::ApplyVelocity)
+                .in_set(OnUpdate(GameState::Playing)),
         ));
     }
 }
@@ -42,12 +59,12 @@ fn spawn_player(mut cmds: Commands) {
         Player,
         Collider::cuboid(PLAYER_SIZE.x / 2., PLAYER_SIZE.y / 2.),
         KinematicCharacterController {
-            // autostep: Some(CharacterAutostep {
-            //     max_height: CharacterLength::Absolute(TILE_SIZE.y),
-            //     min_width: CharacterLength::Absolute(TILE_SIZE.x),
-            //     ..default()
-            // }),
-            // snap_to_ground: Some(CharacterLength::Absolute(TILE_SIZE.y)),
+            autostep: Some(CharacterAutostep {
+                max_height: CharacterLength::Absolute(TILE_SIZE.y + 1.),
+                min_width: CharacterLength::Absolute(TILE_SIZE.x - 1.),
+                ..default()
+            }),
+            snap_to_ground: Some(CharacterLength::Absolute(TILE_SIZE.y)),
             ..default()
         },
         Velocity::default(),

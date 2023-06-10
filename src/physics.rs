@@ -1,11 +1,13 @@
-use {
-    crate::{player::move_player, game_state::GameState},
-    bevy::prelude::*,
-    bevy_rapier2d::prelude::*,
-};
+use {crate::game_state::GameState, bevy::prelude::*, bevy_rapier2d::prelude::*};
 
 const DEFAULT_TERMINAL_VELOCITY: Vec2 = Vec2::new(100., 300.);
 const DEFAULT_GRAVITY: f32 = 9.8;
+
+#[derive(SystemSet, Hash, Debug, PartialEq, Eq, Clone)]
+pub enum PhysicsSystemSet {
+    ApplyVelocity,
+    ZeroVelocityOnCollision,
+}
 
 pub(super) struct PhysicsPlugin;
 
@@ -13,8 +15,8 @@ impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             (
-                zero_velocity_on_collision.before(move_player),
-                apply_velocity.after(move_player),
+                zero_velocity_on_collision.in_set(PhysicsSystemSet::ZeroVelocityOnCollision),
+                apply_velocity.in_set(PhysicsSystemSet::ApplyVelocity),
             )
                 .in_set(OnUpdate(GameState::Playing)),
         );
@@ -83,18 +85,24 @@ fn zero_velocity_on_collision(
 ) {
     for (char_ctrl_out, mut vel) in physics_qry.iter_mut() {
         for collision in char_ctrl_out.collisions.iter() {
-            let (dot_prod_x, dot_prod_y) = (
-                collision.toi.normal2.normalize().dot(Vec2::X),
-                collision.toi.normal2.normalize().dot(Vec2::Y),
-            );
             let threshold = 0.8;
 
-            if dot_prod_x > threshold || dot_prod_x < -threshold {
+            if is_colliding_horizontally(collision.toi.normal2, threshold) {
                 vel.linvel.x = 0.;
             }
-            if dot_prod_y > threshold || dot_prod_y < -threshold {
+            if is_colliding_vertically(collision.toi.normal2, threshold) {
                 vel.linvel.y = 0.;
             }
         }
     }
+}
+
+fn is_colliding_horizontally(normal: Vec2, threshold: f32) -> bool {
+    let dot_prod = normal.normalize().dot(Vec2::X);
+    dot_prod > threshold || dot_prod < -threshold
+}
+
+fn is_colliding_vertically(normal: Vec2, threshold: f32) -> bool {
+    let dot_prod = normal.normalize().dot(Vec2::Y);
+    dot_prod > threshold || dot_prod < -threshold
 }
