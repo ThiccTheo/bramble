@@ -1,5 +1,6 @@
 mod game_state;
 mod graphics;
+mod health;
 mod main_camera;
 mod physics;
 mod player;
@@ -15,23 +16,28 @@ use {
     bevy_rapier2d::prelude::*,
     game_state::GameState,
     graphics::{GraphicsPlugin, WINDOW_RESOLUTION},
+    health::HealthPlugin,
     leafwing_input_manager::prelude::*,
     main_camera::MainCameraPlugin,
     physics::PhysicsPlugin,
-    player::{PlayerAction, PlayerPlugin},
+    player::{PlayerControl, PlayerPlugin},
     world_generation::WorldGenerationPlugin,
 };
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                title: String::from("Bramble"),
-                resolution: WindowResolution::new(WINDOW_RESOLUTION.x, WINDOW_RESOLUTION.y),
-                ..default()
-            }),
-            ..default()
-        }))
+        .add_plugins(
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: String::from("Bramble"),
+                        resolution: WindowResolution::new(WINDOW_RESOLUTION.x, WINDOW_RESOLUTION.y),
+                        ..default()
+                    }),
+                    ..default()
+                })
+                .set(ImagePlugin::default_linear()),
+        )
         .edit_schedule(CoreSchedule::Main, |schedule| {
             schedule.set_build_settings(ScheduleBuildSettings {
                 ambiguity_detection: LogLevel::Ignore,
@@ -39,7 +45,7 @@ fn main() {
             });
         })
         .add_state::<GameState>()
-        .add_plugin(InputManagerPlugin::<PlayerAction>::default())
+        .add_plugin(InputManagerPlugin::<PlayerControl>::default())
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         //.add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(PhysicsPlugin)
@@ -48,5 +54,6 @@ fn main() {
         .add_plugin(MainCameraPlugin)
         .add_plugin(WorldGenerationPlugin)
         .add_plugin(PlayerPlugin)
+        .add_plugin(HealthPlugin)
         .run();
 }

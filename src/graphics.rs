@@ -29,7 +29,7 @@ const BACKGROUND_COLOR: Color = rgb_u8!(135, 206, 250);
 const OUTLINE_THICKNESS: Val = Val::Px(2.);
 
 #[derive(SystemSet, Hash, Debug, PartialEq, Eq, Clone)]
-pub enum GraphicsSystemSet {
+pub enum GraphicsSystem {
     AddOutlinesToHighlightables,
     HighlightTargetOnHover,
 }
@@ -41,9 +41,9 @@ impl Plugin for GraphicsPlugin {
         app.insert_resource(ClearColor(BACKGROUND_COLOR))
             .add_systems(
                 (
-                    highlight_target_on_hover.in_set(GraphicsSystemSet::HighlightTargetOnHover),
+                    highlight_target_on_hover.in_set(GraphicsSystem::HighlightTargetOnHover),
                     add_outlines_to_highlightables
-                        .in_set(GraphicsSystemSet::AddOutlinesToHighlightables),
+                        .in_set(GraphicsSystem::AddOutlinesToHighlightables),
                 )
                     .in_set(OnUpdate(GameState::Playing)),
             );

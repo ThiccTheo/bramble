@@ -1,7 +1,7 @@
 use {
     crate::{
         game_state::GameState,
-        player::{Player, PlayerAction},
+        player::{Player, PlayerControl, PlayerSystem},
     },
     bevy::prelude::*,
     leafwing_input_manager::prelude::*,
@@ -15,7 +15,7 @@ const CAMERA_ZOOM_IN_LIMIT: f32 = DEFAULT_CAMERA_ZOOM - CAMERA_ZOOM_OFFSET;
 const CAMERA_ZOOM_OUT_LIMIT: f32 = DEFAULT_CAMERA_ZOOM + CAMERA_ZOOM_OFFSET;
 
 #[derive(SystemSet, Hash, Debug, PartialEq, Eq, Clone)]
-pub enum MainCameraSystemSet {
+pub enum MainCameraSystem {
     SpawnMainCamera,
     FollowPlayer,
     AdjustZoom,
@@ -27,13 +27,15 @@ impl Plugin for MainCameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(
             spawn_main_camera
-                .in_set(MainCameraSystemSet::SpawnMainCamera)
+                .in_set(MainCameraSystem::SpawnMainCamera)
                 .in_schedule(OnEnter(GameState::Playing)),
         )
         .add_systems(
             (
-                follow_player.in_set(MainCameraSystemSet::FollowPlayer),
-                adjust_zoom.in_set(MainCameraSystemSet::AdjustZoom),
+                follow_player
+                    .in_set(MainCameraSystem::FollowPlayer)
+                    .after(PlayerSystem::MovePlayer),
+                adjust_zoom.in_set(MainCameraSystem::AdjustZoom),
             )
                 .in_set(OnUpdate(GameState::Playing)),
         );
@@ -65,20 +67,20 @@ fn follow_player(
 
 fn adjust_zoom(
     mut cam_qry: Query<&mut OrthographicProjection, With<MainCamera>>,
-    action_state_qry: Query<&ActionState<PlayerAction>, With<Player>>,
+    action_state_qry: Query<&ActionState<PlayerControl>, With<Player>>,
     time: Res<Time>,
 ) {
     let mut projection = cam_qry.single_mut();
     let action_state = action_state_qry.single();
     let dt = time.delta_seconds();
 
-    if action_state.pressed(PlayerAction::ZoomIn) {
+    if action_state.pressed(PlayerControl::ZoomIn) {
         projection.scale = f32::max(
             projection.scale - CAMERA_ZOOM_AMOUNT * dt,
             CAMERA_ZOOM_IN_LIMIT,
         );
     }
-    if action_state.pressed(PlayerAction::ZoomOut) {
+    if action_state.pressed(PlayerControl::ZoomOut) {
         projection.scale = f32::min(
             projection.scale + CAMERA_ZOOM_AMOUNT * dt,
             CAMERA_ZOOM_OUT_LIMIT,

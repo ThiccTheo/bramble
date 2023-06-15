@@ -4,7 +4,7 @@ const DEFAULT_TERMINAL_VELOCITY: Vec2 = Vec2::new(100., 300.);
 const DEFAULT_GRAVITY: f32 = 9.8;
 
 #[derive(SystemSet, Hash, Debug, PartialEq, Eq, Clone)]
-pub enum PhysicsSystemSet {
+pub enum PhysicsSystem {
     ApplyVelocity,
     ZeroVelocityOnCollision,
 }
@@ -15,8 +15,8 @@ impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             (
-                zero_velocity_on_collision.in_set(PhysicsSystemSet::ZeroVelocityOnCollision),
-                apply_velocity.in_set(PhysicsSystemSet::ApplyVelocity),
+                zero_velocity_on_collision.in_set(PhysicsSystem::ZeroVelocityOnCollision),
+                apply_velocity.in_set(PhysicsSystem::ApplyVelocity),
             )
                 .in_set(OnUpdate(GameState::Playing)),
         );

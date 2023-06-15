@@ -1,5 +1,5 @@
 use {
-    crate::{game_state::GameState, graphics::Highlightable, physics::BoundingBox},
+    crate::{game_state::GameState, graphics::Highlightable, health::Health, physics::BoundingBox},
     bevy::prelude::*,
     bevy_ecs_tilemap::prelude::*,
     bevy_rapier2d::prelude::*,
@@ -16,19 +16,27 @@ pub const BACKGROUND_LAYER: f32 = 1.;
 pub const FOREGROUND_LAYER: f32 = 2.;
 pub const ENTITY_LAYER: f32 = 3.;
 
+#[derive(SystemSet, Hash, Debug, PartialEq, Eq, Clone)]
+pub enum WorldGenerationSystem {
+    GenerateWorldSeed,
+    CreatePerlinMap,
+    SpawnTilemap,
+    AddCollidersToTiles,
+}
+
 pub(super) struct WorldGenerationPlugin;
 
 impl Plugin for WorldGenerationPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             (
-                generate_world_seed,
+                generate_world_seed.in_set(WorldGenerationSystem::GenerateWorldSeed),
                 apply_system_buffers,
-                create_perlin_map,
+                create_perlin_map.in_set(WorldGenerationSystem::CreatePerlinMap),
                 apply_system_buffers,
-                spawn_tilemap,
+                spawn_tilemap.in_set(WorldGenerationSystem::SpawnTilemap),
                 apply_system_buffers,
-                add_colliders_to_tiles,
+                add_colliders_to_tiles.in_set(WorldGenerationSystem::AddCollidersToTiles),
             )
                 .chain()
                 .in_schedule(OnEnter(GameState::Playing)),
@@ -56,6 +64,8 @@ fn create_perlin_map(mut cmds: Commands, seed: Res<WorldSeed>) {
     let src_mod = Fbm::<Perlin>::new(seed.0);
     let perlin_map = PlaneMapBuilder::<_, 2>::new(&src_mod)
         .set_size(TILE_MAP_SIZE.x as usize, TILE_MAP_SIZE.y as usize)
+        .set_x_bounds(-5., 5.)
+        .set_y_bounds(-5., 5.)
         .build();
 
     cmds.insert_resource(PerlinMap(perlin_map));
@@ -75,10 +85,15 @@ fn spawn_tilemap(mut cmds: Commands, assets: Res<AssetServer>, perlin_map: Res<P
                     .spawn((
                         TileBundle {
                             position: tile_pos,
-                            texture_index: TileTextureIndex(0),
+                            texture_index: TileTextureIndex(if y < TILE_MAP_SIZE.y / 2 {
+                                3
+                            } else {
+                                0
+                            }),
                             tilemap_id: TilemapId(tilemap_id),
                             ..default()
                         },
+                        Health(100),
                         Highlightable,
                         BoundingBox::new(TILE_SIZE.x, TILE_SIZE.y),
                     ))
