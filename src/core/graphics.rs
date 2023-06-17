@@ -1,5 +1,6 @@
 use {
-    crate::{game_state::GameState, main_camera::MainCamera, physics::BoundingBox},
+    super::{game_state::GameState, physics::BoundingBox},
+    crate::world::main_camera::MainCamera,
     bevy::{prelude::*, sprite::collide_aabb, window::PrimaryWindow},
 };
 

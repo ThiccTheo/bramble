@@ -1,4 +1,4 @@
-use {crate::game_state::GameState, bevy::prelude::*, bevy_rapier2d::prelude::*};
+use {super::game_state::GameState, bevy::prelude::*, bevy_rapier2d::prelude::*};
 
 const DEFAULT_TERMINAL_VELOCITY: Vec2 = Vec2::new(100., 300.);
 const DEFAULT_GRAVITY: f32 = 9.8;

@@ -1,14 +1,16 @@
 use {
-    crate::{
-        game_state::GameState,
-        health::DamageEvent,
+    super::{
         main_camera::MainCamera,
-        physics::{BoundingBox, PhysicsSystem},
-        rgb_u8,
         world_generation::{ENTITY_LAYER, TILE_SIZE},
     },
+    crate::{
+        core::{
+            game_state::GameState,
+            physics::{BoundingBox, PhysicsSystem},
+        },
+        logic::health::DamageEvent,
+    },
     bevy::{prelude::*, sprite::collide_aabb, window::PrimaryWindow},
-    bevy_ecs_tilemap::prelude::*,
     bevy_rapier2d::prelude::*,
     leafwing_input_manager::prelude::*,
 };

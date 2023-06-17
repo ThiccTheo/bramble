@@ -1,5 +1,8 @@
 use {
-    crate::{game_state::GameState, graphics::Highlightable, health::Health, physics::BoundingBox},
+    crate::{
+        core::{game_state::GameState, graphics::Highlightable, physics::BoundingBox},
+        logic::health::Health,
+    },
     bevy::prelude::*,
     bevy_ecs_tilemap::prelude::*,
     bevy_rapier2d::prelude::*,

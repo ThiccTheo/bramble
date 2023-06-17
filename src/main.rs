@@ -1,12 +1,9 @@
-mod game_state;
-mod graphics;
-mod health;
-mod main_camera;
-mod physics;
-mod player;
-mod world_generation;
+mod core;
+mod logic;
+mod world;
 
 use {
+    crate::core::{game_state::GameState, graphics::WINDOW_RESOLUTION, CorePlugins},
     bevy::{
         ecs::schedule::{LogLevel, ScheduleBuildSettings},
         prelude::*,
@@ -14,14 +11,9 @@ use {
     },
     bevy_ecs_tilemap::prelude::*,
     bevy_rapier2d::prelude::*,
-    game_state::GameState,
-    graphics::{GraphicsPlugin, WINDOW_RESOLUTION},
-    health::HealthPlugin,
     leafwing_input_manager::prelude::*,
-    main_camera::MainCameraPlugin,
-    physics::PhysicsPlugin,
-    player::{PlayerControl, PlayerPlugin},
-    world_generation::WorldGenerationPlugin,
+    logic::LogicPlugins,
+    world::{player::PlayerControl, WorldPlugins},
 };
 
 fn main() {
@@ -48,12 +40,9 @@ fn main() {
         .add_plugin(InputManagerPlugin::<PlayerControl>::default())
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         //.add_plugin(RapierDebugRenderPlugin::default())
-        .add_plugin(PhysicsPlugin)
-        .add_plugin(GraphicsPlugin)
         .add_plugin(TilemapPlugin)
-        .add_plugin(MainCameraPlugin)
-        .add_plugin(WorldGenerationPlugin)
-        .add_plugin(PlayerPlugin)
-        .add_plugin(HealthPlugin)
+        .add_plugins(CorePlugins)
+        .add_plugins(LogicPlugins)
+        .add_plugins(WorldPlugins)
         .run();
 }

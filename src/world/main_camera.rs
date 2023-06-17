@@ -1,8 +1,6 @@
 use {
-    crate::{
-        game_state::GameState,
-        player::{Player, PlayerControl, PlayerSystem},
-    },
+    super::player::{Player, PlayerControl, PlayerSystem},
+    crate::core::game_state::GameState,
     bevy::prelude::*,
     leafwing_input_manager::prelude::*,
 };

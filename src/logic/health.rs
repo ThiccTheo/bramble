@@ -1,4 +1,4 @@
-use {crate::game_state::GameState, bevy::prelude::*, bevy_ecs_tilemap::prelude::*};
+use {crate::core::game_state::GameState, bevy::prelude::*, bevy_ecs_tilemap::prelude::*};
 
 // Subject to change
 #[derive(SystemSet, Hash, Debug, PartialEq, Eq, Clone)]
