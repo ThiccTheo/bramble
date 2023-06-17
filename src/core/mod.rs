@@ -1,12 +1,12 @@
+pub mod game_state;
+pub mod graphics;
+pub mod physics;
+
 use {
     bevy::{app::PluginGroupBuilder, prelude::*},
     graphics::GraphicsPlugin,
     physics::PhysicsPlugin,
 };
-
-pub mod game_state;
-pub mod graphics;
-pub mod physics;
 
 pub struct CorePlugins;
 

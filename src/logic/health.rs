@@ -1,4 +1,4 @@
-use {crate::core::game_state::GameState, bevy::prelude::*, bevy_ecs_tilemap::prelude::*};
+use {crate::core::game_state::GameState, bevy::prelude::*};
 
 // Subject to change
 #[derive(SystemSet, Hash, Debug, PartialEq, Eq, Clone)]
@@ -31,11 +31,7 @@ fn deal_damage(
     mut cmds: Commands,
     mut dmg_evr: EventReader<DamageEvent>,
     mut hp_qry: Query<&mut Health>,
-    mut tile_storage_qry: Query<&mut TileStorage>,
-    tile_qry: Query<&TilePos>,
 ) {
-    let mut tile_storage = tile_storage_qry.single_mut();
-
     for DamageEvent {
         damage_dealt,
         target_id,
@@ -46,11 +42,6 @@ fn deal_damage(
 
         if target_hp.0 <= 0 {
             cmds.entity(*target_id).despawn_recursive();
-
-            // Temporary
-            if let Ok(tile_pos) = tile_qry.get(*target_id) {
-                tile_storage.remove(tile_pos);
-            }
         }
     }
 }

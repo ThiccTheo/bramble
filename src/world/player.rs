@@ -83,10 +83,6 @@ fn spawn_player(mut cmds: Commands, assets: Res<AssetServer>) {
         Velocity::default(),
         Friction::new(DEFAULT_PLAYER_FRICTION_COEFFICIENT),
         SpriteBundle {
-            // sprite: Sprite {
-            //     custom_size: Some(PLAYER_SIZE),
-            //     ..default()
-            // },
             transform: Transform::from_xyz(0., 1000., ENTITY_LAYER),
             texture: assets.load("images/player.png"),
             ..default()

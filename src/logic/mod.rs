@@ -1,10 +1,10 @@
+pub mod health;
+pub mod inventory;
+
 use {
     bevy::{app::PluginGroupBuilder, prelude::*},
     health::HealthPlugin,
 };
-
-pub mod health;
-pub mod inventory;
 
 pub struct LogicPlugins;
 
