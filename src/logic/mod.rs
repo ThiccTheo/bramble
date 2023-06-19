@@ -4,12 +4,15 @@ pub mod inventory;
 use {
     bevy::{app::PluginGroupBuilder, prelude::*},
     health::HealthPlugin,
+    inventory::InventoryPlugin,
 };
 
 pub struct LogicPlugins;
 
 impl PluginGroup for LogicPlugins {
     fn build(self) -> PluginGroupBuilder {
-        PluginGroupBuilder::start::<Self>().add(HealthPlugin)
+        PluginGroupBuilder::start::<Self>()
+            .add(HealthPlugin)
+            .add(InventoryPlugin)
     }
 }

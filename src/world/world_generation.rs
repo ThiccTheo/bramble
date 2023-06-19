@@ -1,7 +1,7 @@
 use {
     crate::{
         core::{game_state::GameState, graphics::Highlightable, physics::BoundingBox},
-        logic::health::Health,
+        logic::{health::Health, inventory::Inventory},
     },
     bevy::prelude::*,
     bevy_ecs_tilemap::prelude::*,
@@ -75,7 +75,7 @@ fn create_perlin_map(mut cmds: Commands, seed: Res<WorldSeed>) {
 }
 
 fn spawn_tilemap(mut cmds: Commands, assets: Res<AssetServer>, perlin_map: Res<PerlinMap>) {
-    let tilemap_tex = assets.load("images/tiles.png");
+    let tilemap_tex = assets.load("images/tile.png");
     let tilemap_id = cmds.spawn_empty().id();
     let mut tile_storage = TileStorage::empty(TILE_MAP_SIZE);
 
@@ -84,14 +84,16 @@ fn spawn_tilemap(mut cmds: Commands, assets: Res<AssetServer>, perlin_map: Res<P
             let tile_pos = TilePos { x, y };
 
             if perlin_map.0.get_value(x as usize, y as usize) > 0.1 {
+                // REMOVE THIS
+                let tmp_id = cmds.spawn_empty().id();
                 let tile_id = cmds
                     .spawn((
                         TileBundle {
                             position: tile_pos,
                             texture_index: TileTextureIndex(if y < TILE_MAP_SIZE.y / 2 {
-                                3
+                                1
                             } else {
-                                0
+                                3
                             }),
                             tilemap_id: TilemapId(tilemap_id),
                             ..default()
@@ -99,6 +101,11 @@ fn spawn_tilemap(mut cmds: Commands, assets: Res<AssetServer>, perlin_map: Res<P
                         Health(100),
                         Highlightable,
                         BoundingBox::new(TILE_SIZE.x, TILE_SIZE.y),
+                        Inventory {
+                            keep_items: false,
+                            items: vec![Some(tmp_id)],
+                            item_slot_count: 1,
+                        },
                     ))
                     .id();
                 tile_storage.set(&tile_pos, tile_id);

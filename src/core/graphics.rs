@@ -1,7 +1,6 @@
 use {
-    super::{game_state::GameState, physics::BoundingBox},
-    crate::world::main_camera::MainCamera,
-    bevy::{prelude::*, sprite::collide_aabb, window::PrimaryWindow},
+    super::{game_state::GameState, mouse_position::MousePosition, physics::BoundingBox},
+    bevy::{prelude::*, sprite::collide_aabb},
 };
 
 #[macro_export]
@@ -73,18 +72,13 @@ fn add_outlines_to_highlightables(
 
 fn highlight_target_on_hover(
     interactable_qry: Query<(&BoundingBox, &Transform), With<Highlightable>>,
-    cam_qry: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-    win_qry: Query<&Window, With<PrimaryWindow>>,
+    mouse_pos: Res<MousePosition>,
 ) {
-    let (cam, cam_transform) = cam_qry.single();
-    let win = win_qry.single();
-    let Some(mouse_pos) = win.cursor_position().and_then(|pos| cam.viewport_to_world_2d(cam_transform, pos)) else { return };
-
     let Some((_interactable_hitbox, _interactable_transform)) = interactable_qry
         .iter()
         .find(|(hitbox, transform)| {
             collide_aabb::collide(
-                mouse_pos.extend(transform.translation.z),
+                mouse_pos.0.extend(transform.translation.z),
                 Vec2::ONE,
                 transform.translation,
                 Vec2::new(hitbox.width, hitbox.height),

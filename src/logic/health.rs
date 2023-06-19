@@ -1,9 +1,16 @@
-use {crate::core::game_state::GameState, bevy::prelude::*};
+use {
+    crate::{
+        core::game_state::GameState,
+        logic::inventory::{Inventory, InventorySystem, ItemDropEvent},
+    },
+    bevy::prelude::*,
+};
 
 // Subject to change
 #[derive(SystemSet, Hash, Debug, PartialEq, Eq, Clone)]
 pub enum HealthSystem {
     DealDamage,
+    RemoveDeadEntities,
 }
 
 // Subject to change
@@ -11,9 +18,13 @@ pub(super) struct HealthPlugin;
 
 impl Plugin for HealthPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<DamageEvent>().add_system(
-            deal_damage
-                .in_set(HealthSystem::DealDamage)
+        app.add_event::<DamageEvent>().add_systems(
+            (
+                deal_damage.in_set(HealthSystem::DealDamage),
+                remove_dead_entities
+                    .in_set(HealthSystem::RemoveDeadEntities)
+                    .after(InventorySystem::HandleItemDrops),
+            )
                 .in_set(OnUpdate(GameState::Playing)),
         );
     }
@@ -28,9 +39,10 @@ pub struct DamageEvent {
 }
 
 fn deal_damage(
-    mut cmds: Commands,
     mut dmg_evr: EventReader<DamageEvent>,
     mut hp_qry: Query<&mut Health>,
+    mut inventory_qry: Query<&mut Inventory>,
+    mut item_drop_evw: EventWriter<ItemDropEvent>,
 ) {
     for DamageEvent {
         damage_dealt,
@@ -41,7 +53,22 @@ fn deal_damage(
         target_hp.0 -= *damage_dealt;
 
         if target_hp.0 <= 0 {
-            cmds.entity(*target_id).despawn_recursive();
+            if let Ok(inventory) = inventory_qry.get_mut(*target_id) {
+                for (slot_idx, &item) in inventory.items.iter().enumerate() {
+                    let Some(item_id) = item else { continue };
+                    item_drop_evw.send(ItemDropEvent {
+                        item_id,
+                        inventory_id: *target_id,
+                        item_slot: slot_idx,
+                    });
+                }
+            }
         }
+    }
+}
+
+fn remove_dead_entities(mut cmds: Commands, hp_qry: Query<(Entity, &Health)>) {
+    for id in hp_qry.iter().filter(|(_, hp)| hp.0 <= 0).map(|(id, _)| id) {
+        cmds.entity(id).despawn_recursive();
     }
 }

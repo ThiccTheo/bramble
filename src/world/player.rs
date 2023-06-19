@@ -1,16 +1,14 @@
 use {
-    super::{
-        main_camera::MainCamera,
-        world_generation::{ENTITY_LAYER, TILE_SIZE},
-    },
+    super::world_generation::{ENTITY_LAYER, TILE_SIZE},
     crate::{
         core::{
             game_state::GameState,
+            mouse_position::MousePosition,
             physics::{BoundingBox, PhysicsSystem},
         },
         logic::health::DamageEvent,
     },
-    bevy::{prelude::*, sprite::collide_aabb, window::PrimaryWindow},
+    bevy::{prelude::*, sprite::collide_aabb},
     bevy_rapier2d::prelude::*,
     leafwing_input_manager::prelude::*,
 };
@@ -143,26 +141,22 @@ fn move_player(
 fn attack(
     mut player_qry: Query<(&Transform, &mut Sprite), With<Player>>,
     action_state_qry: Query<&ActionState<PlayerControl>, With<Player>>,
-    cam_qry: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-    win_qry: Query<&Window, With<PrimaryWindow>>,
     tiles_qry: Query<(Entity, &Transform)>,
     mut dmg_evw: EventWriter<DamageEvent>,
+    mouse_pos: Res<MousePosition>,
 ) {
     let (player_transform, mut player_sprite) = player_qry.single_mut();
     let action_state = action_state_qry.single();
-    let (cam, cam_transform) = cam_qry.single();
-    let win = win_qry.single();
-    let Some(mouse_pos) = win.cursor_position().and_then(|pos| cam.viewport_to_world_2d(cam_transform, pos)) else { return };
 
     if action_state.pressed(PlayerControl::Attack) {
-        if mouse_pos.x < player_transform.translation.x {
+        if mouse_pos.0.x < player_transform.translation.x {
             player_sprite.flip_x = true;
-        } else if mouse_pos.x > player_transform.translation.x {
+        } else if mouse_pos.0.x > player_transform.translation.x {
             player_sprite.flip_x = false;
         }
         for (tile_id, tile_transform) in tiles_qry.iter() {
             if collide_aabb::collide(
-                mouse_pos.extend(tile_transform.translation.z),
+                mouse_pos.0.extend(tile_transform.translation.z),
                 Vec2::ONE,
                 tile_transform.translation,
                 TILE_SIZE.into(),

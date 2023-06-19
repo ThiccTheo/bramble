@@ -11,6 +11,7 @@ const DEFAULT_CAMERA_ZOOM: f32 = 1.;
 const CAMERA_ZOOM_OFFSET: f32 = 0.4;
 const CAMERA_ZOOM_IN_LIMIT: f32 = DEFAULT_CAMERA_ZOOM - CAMERA_ZOOM_OFFSET;
 const CAMERA_ZOOM_OUT_LIMIT: f32 = DEFAULT_CAMERA_ZOOM + CAMERA_ZOOM_OFFSET;
+const DEFAULT_CAMERA_Z: f32 = 999.9;
 
 #[derive(SystemSet, Hash, Debug, PartialEq, Eq, Clone)]
 pub enum MainCameraSystem {
@@ -61,6 +62,7 @@ fn follow_player(
         player_transform.translation,
         CAMERA_FOLLOW_SPEED * dt,
     );
+    cam_transform.translation.z = DEFAULT_CAMERA_Z;
 }
 
 fn adjust_zoom(
