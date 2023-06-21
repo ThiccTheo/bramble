@@ -13,7 +13,7 @@ use {
     bevy_inspector_egui::quick::WorldInspectorPlugin,
     bevy_rapier2d::prelude::*,
     leafwing_input_manager::prelude::*,
-    logic::LogicPlugins,
+    logic::{LogicPlugins, inventory::Inventory},
     world::{player::PlayerControl, WorldPlugins},
 };
 
@@ -29,7 +29,7 @@ fn main() {
                     }),
                     ..default()
                 })
-                .set(ImagePlugin::default_linear()),
+                .set(ImagePlugin::default_nearest()),
         )
         .edit_schedule(CoreSchedule::Main, |schedule| {
             schedule.set_build_settings(ScheduleBuildSettings {
@@ -41,7 +41,9 @@ fn main() {
         .add_plugin(InputManagerPlugin::<PlayerControl>::default())
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(WorldInspectorPlugin::default())
-        //.add_plugin(RapierDebugRenderPlugin::default())
+        .register_type::<TextureAtlasSprite>()
+        .register_type::<Inventory>()
+        .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(TilemapPlugin)
         .add_plugins(CorePlugins)
         .add_plugins(LogicPlugins)

@@ -1,9 +1,11 @@
+pub mod animation;
 pub mod game_state;
 pub mod graphics;
 pub mod mouse_position;
 pub mod physics;
 
 use {
+    animation::AnimationPlugin,
     bevy::{app::PluginGroupBuilder, prelude::*},
     graphics::GraphicsPlugin,
     mouse_position::MousePositionPlugin,
@@ -18,5 +20,6 @@ impl PluginGroup for CorePlugins {
             .add(GraphicsPlugin)
             .add(PhysicsPlugin)
             .add(MousePositionPlugin)
+            .add(AnimationPlugin)
     }
 }
