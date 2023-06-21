@@ -4,6 +4,7 @@ use {
         world::world_generation::ENTITY_LAYER,
     },
     bevy::{prelude::*, sprite::collide_aabb},
+    std::time::Duration,
 };
 
 #[derive(SystemSet, Hash, Debug, PartialEq, Eq, Clone)]
@@ -23,6 +24,7 @@ impl Plugin for InventoryPlugin {
                     handle_item_drops.in_set(InventorySystem::HandleItemDrops),
                     collect_items,
                     handle_item_pickups.in_set(InventorySystem::HandleItemPickups),
+                    update_item_pickup_delays,
                 )
                     .in_set(OnUpdate(GameState::Playing)),
             );
@@ -39,7 +41,23 @@ pub struct Inventory {
 pub type ItemSlot = Option<Entity>;
 
 #[derive(Component)]
-pub struct DroppedItem;
+pub struct DroppedItem {
+    pub owner: Entity,
+    pickup_delay: Timer,
+}
+
+impl DroppedItem {
+    fn new(owner: Entity) -> Self {
+        Self {
+            owner,
+            pickup_delay: Timer::new(Duration::from_secs(2), TimerMode::Once),
+        }
+    }
+
+    fn can_be_collected(&self, collector: Entity) -> bool {
+        collector != self.owner || self.pickup_delay.finished()
+    }
+}
 
 pub struct ItemDropEvent {
     pub item_id: Entity,
@@ -57,7 +75,7 @@ fn handle_item_drops(
     mut cmds: Commands,
     mut item_drop_evr: EventReader<ItemDropEvent>,
     mut inventory_qry: Query<(&mut Inventory, &mut Transform)>,
-    assets: Res<AssetServer>
+    assets: Res<AssetServer>,
 ) {
     for ItemDropEvent {
         item_id,
@@ -79,7 +97,7 @@ fn handle_item_drops(
                 texture: assets.load("images/player.png"),
                 ..default()
             },
-            DroppedItem,
+            DroppedItem::new(*inventory_id),
             BoundingBox::new(8., 8.),
         ));
         *item = None;
@@ -113,17 +131,18 @@ fn handle_item_pickups(
 fn collect_items(
     mut item_pickup_evw: EventWriter<ItemPickupEvent>,
     inventory_qry: Query<(Entity, &Transform, &BoundingBox)>,
-    dropped_item_qry: Query<(Entity, &Transform, &BoundingBox), With<DroppedItem>>,
+    dropped_item_qry: Query<(Entity, &Transform, &BoundingBox, &DroppedItem)>,
 ) {
     for (inventory_id, inventory_transform, inventory_hitbox) in inventory_qry.iter() {
-        for (item_id, item_transform, item_hitbox) in dropped_item_qry.iter() {
-            if collide_aabb::collide(
-                inventory_transform.translation,
-                inventory_hitbox.clone().into(),
-                item_transform.translation,
-                item_hitbox.clone().into(),
-            )
-            .is_some()
+        for (item_id, item_transform, item_hitbox, dropped_item) in dropped_item_qry.iter() {
+            if dropped_item.can_be_collected(inventory_id)
+                && collide_aabb::collide(
+                    inventory_transform.translation,
+                    inventory_hitbox.clone().into(),
+                    item_transform.translation,
+                    item_hitbox.clone().into(),
+                )
+                .is_some()
             {
                 item_pickup_evw.send(ItemPickupEvent {
                     item_id,
@@ -131,5 +150,13 @@ fn collect_items(
                 });
             }
         }
+    }
+}
+
+fn update_item_pickup_delays(time: Res<Time>, mut dropped_item_qry: Query<&mut DroppedItem>) {
+    let dt = time.delta();
+
+    for mut item in dropped_item_qry.iter_mut() {
+        item.pickup_delay.tick(dt);
     }
 }

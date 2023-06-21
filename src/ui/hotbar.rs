@@ -25,7 +25,13 @@ impl Plugin for HotbarPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(spawn_hotbar.in_schedule(OnEnter(GameState::Playing)))
             .add_systems(
-                (populate_hotbar, update_hotbar_items).in_set(OnUpdate(GameState::Playing)),
+                (
+                    populate_hotbar,
+                    update_hotbar_items,
+                    highlight_selected_slot,
+                    click_hotbar_slot,
+                )
+                    .in_set(OnUpdate(GameState::Playing)),
             );
     }
 }
@@ -37,6 +43,9 @@ pub struct Hotbar;
 pub struct HotbarSlot {
     pub item_id: Option<Entity>,
 }
+
+#[derive(Component)]
+pub struct HotbarButton(pub usize);
 
 fn spawn_hotbar(mut cmds: Commands, assets: Res<AssetServer>) {
     cmds.spawn((
@@ -61,16 +70,19 @@ fn spawn_hotbar(mut cmds: Commands, assets: Res<AssetServer>) {
     .with_children(|parent| {
         for i in 1..=HOTBAR_ITEM_COUNT {
             parent
-                .spawn(ButtonBundle {
-                    background_color: rgb_u8!(220, 220, 220).into(),
-                    style: Style {
-                        size: Size::all(Val::Px(32.)),
-                        align_items: AlignItems::FlexStart,
-                        justify_content: JustifyContent::FlexStart,
+                .spawn((
+                    ButtonBundle {
+                        background_color: rgb_u8!(220, 220, 220).into(),
+                        style: Style {
+                            size: Size::all(Val::Px(32.)),
+                            align_items: AlignItems::FlexStart,
+                            justify_content: JustifyContent::FlexStart,
+                            ..default()
+                        },
                         ..default()
                     },
-                    ..default()
-                })
+                    HotbarButton(i),
+                ))
                 .with_children(|parent| {
                     parent.spawn(TextBundle {
                         text: Text {
@@ -117,8 +129,37 @@ fn update_hotbar_items(
     sprite_qry: Query<&Handle<Image>, Or<(With<Sprite>, With<TextureAtlasSprite>)>>,
 ) {
     for (mut old_hotbar_img, hotbar_slot) in hotbar_item_qry.iter_mut() {
-        let Some(item_id) = hotbar_slot.item_id else { continue };
-        let Ok(new_hotbar_img) = sprite_qry.get(item_id) else { continue };
-        old_hotbar_img.texture = new_hotbar_img.clone();
+        if let Some(item_id) = hotbar_slot.item_id {
+            let Ok(new_hotbar_img) = sprite_qry.get(item_id) else { continue };
+            old_hotbar_img.texture = new_hotbar_img.clone();
+        } else {
+            old_hotbar_img.texture = UiImage::default().texture;
+        }
+    }
+}
+
+fn highlight_selected_slot(
+    mut hotbar_button_qry: Query<&mut BackgroundColor, With<HotbarButton>>,
+    player_qry: Query<&Player>,
+) {
+    let player = player_qry.single();
+
+    for (i, mut hotbar_slot_color) in hotbar_button_qry.iter_mut().enumerate() {
+        *hotbar_slot_color = if i == player.current_hotbar_index {
+            rgb_u8!(255, 255, 204).into()
+        } else {
+            rgb_u8!(220, 220, 220).into()
+        }
+    }
+}
+
+fn click_hotbar_slot(interaction_qry: Query<(&Interaction, &HotbarButton), (With<Button>, Changed<Interaction>)>, mut player_qry: Query<&mut Player>) {
+    let mut player = player_qry.single_mut();
+
+    for (interaction, hotbar_button) in interaction_qry.iter() {
+        match *interaction {
+            Interaction::Clicked => player.current_hotbar_index = hotbar_button.0 - 1,
+            _ => (),
+        }
     }
 }

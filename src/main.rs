@@ -5,17 +5,13 @@ mod world;
 
 use {
     crate::core::{game_state::GameState, graphics::WINDOW_RESOLUTION, CorePlugins},
-    bevy::{
-        ecs::schedule::{LogLevel, ScheduleBuildSettings},
-        prelude::*,
-        window::WindowResolution,
-    },
+    bevy::{prelude::*, window::WindowResolution},
     bevy_ecs_tilemap::prelude::*,
     bevy_inspector_egui::quick::WorldInspectorPlugin,
     bevy_rapier2d::prelude::*,
     leafwing_input_manager::prelude::*,
     logic::{inventory::Inventory, LogicPlugins},
-    ui::{UiPlugins, hotbar::HotbarSlot},
+    ui::{hotbar::HotbarSlot, UiPlugins},
     world::{player::PlayerControl, WorldPlugins},
 };
 
@@ -33,12 +29,6 @@ fn main() {
                 })
                 .set(ImagePlugin::default_nearest()),
         )
-        .edit_schedule(CoreSchedule::Main, |schedule| {
-            schedule.set_build_settings(ScheduleBuildSettings {
-                ambiguity_detection: LogLevel::Ignore,
-                ..default()
-            });
-        })
         .add_state::<GameState>()
         .add_plugin(InputManagerPlugin::<PlayerControl>::default())
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
@@ -46,7 +36,7 @@ fn main() {
         .register_type::<TextureAtlasSprite>()
         .register_type::<Inventory>()
         .register_type::<HotbarSlot>()
-        .add_plugin(RapierDebugRenderPlugin::default())
+        // .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(TilemapPlugin)
         .add_plugins(CorePlugins)
         .add_plugins(LogicPlugins)

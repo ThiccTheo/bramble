@@ -7,7 +7,10 @@ use {
             mouse_position::MousePosition,
             physics::{BoundingBox, PhysicsSystem},
         },
-        logic::{health::DamageEvent, inventory::Inventory},
+        logic::{
+            health::DamageEvent,
+            inventory::{Inventory, ItemDropEvent},
+        },
     },
     bevy::{prelude::*, sprite::collide_aabb},
     bevy_rapier2d::prelude::*,
@@ -48,6 +51,8 @@ impl Plugin for PlayerPlugin {
                     .before(PhysicsSystem::ApplyVelocity),
                 attack.in_set(PlayerSystem::Attack),
                 interact.in_set(PlayerSystem::Interact),
+                drop_item,
+                update_current_hotbar_index,
             )
                 .in_set(OnUpdate(GameState::Playing)),
         );
@@ -69,10 +74,22 @@ pub enum PlayerControl {
     ToggleInventory,
     NextItem,
     PreviousItem,
+    HotbarSlot1,
+    HotbarSlot2,
+    HotbarSlot3,
+    HotbarSlot4,
+    HotbarSlot5,
+    HotbarSlot6,
+    HotbarSlot7,
+    HotbarSlot8,
+    HotbarSlot9,
+    HotbarSlot10,
 }
 
-#[derive(Component)]
-pub struct Player;
+#[derive(Component, Default)]
+pub struct Player {
+    pub current_hotbar_index: usize,
+}
 
 #[derive(Resource, Default)]
 struct PlayerTexture(Handle<TextureAtlas>);
@@ -96,7 +113,7 @@ fn load_player_texture(
 
 fn spawn_player(mut cmds: Commands, player_texture: Res<PlayerTexture>, assets: Res<AssetServer>) {
     cmds.spawn((
-        Player,
+        Player::default(),
         Collider::cuboid(PLAYER_SIZE.x / 2., PLAYER_SIZE.y / 2.),
         KinematicCharacterController {
             autostep: Some(CharacterAutostep {
@@ -142,6 +159,46 @@ fn spawn_player(mut cmds: Commands, player_texture: Res<PlayerTexture>, assets: 
                 )
                 .insert_many_to_one([KeyCode::LAlt, KeyCode::I], PlayerControl::ToggleInventory)
                 .insert(KeyCode::Q, PlayerControl::DropItem)
+                .insert_many_to_one(
+                    [KeyCode::Key1, KeyCode::Numpad1],
+                    PlayerControl::HotbarSlot1,
+                )
+                .insert_many_to_one(
+                    [KeyCode::Key2, KeyCode::Numpad2],
+                    PlayerControl::HotbarSlot2,
+                )
+                .insert_many_to_one(
+                    [KeyCode::Key3, KeyCode::Numpad3],
+                    PlayerControl::HotbarSlot3,
+                )
+                .insert_many_to_one(
+                    [KeyCode::Key4, KeyCode::Numpad4],
+                    PlayerControl::HotbarSlot4,
+                )
+                .insert_many_to_one(
+                    [KeyCode::Key5, KeyCode::Numpad5],
+                    PlayerControl::HotbarSlot5,
+                )
+                .insert_many_to_one(
+                    [KeyCode::Key6, KeyCode::Numpad6],
+                    PlayerControl::HotbarSlot6,
+                )
+                .insert_many_to_one(
+                    [KeyCode::Key7, KeyCode::Numpad7],
+                    PlayerControl::HotbarSlot7,
+                )
+                .insert_many_to_one(
+                    [KeyCode::Key8, KeyCode::Numpad8],
+                    PlayerControl::HotbarSlot8,
+                )
+                .insert_many_to_one(
+                    [KeyCode::Key9, KeyCode::Numpad9],
+                    PlayerControl::HotbarSlot9,
+                )
+                .insert_many_to_one(
+                    [KeyCode::Key0, KeyCode::Numpad0],
+                    PlayerControl::HotbarSlot10,
+                )
                 .build(),
         },
         Inventory {
@@ -237,4 +294,54 @@ fn interact(action_state_qry: Query<&ActionState<PlayerControl>, With<Player>>) 
     let action_state = action_state_qry.single();
 
     if action_state.pressed(PlayerControl::Interact) {}
+}
+
+fn update_current_hotbar_index(
+    action_state_qry: Query<&ActionState<PlayerControl>, With<Player>>,
+    mut player_qry: Query<&mut Player>,
+) {
+    let action_state = action_state_qry.single();
+    let mut player = player_qry.single_mut();
+
+    player.current_hotbar_index = if action_state.just_pressed(PlayerControl::HotbarSlot1) {
+        0
+    } else if action_state.just_pressed(PlayerControl::HotbarSlot2) {
+        1
+    } else if action_state.just_pressed(PlayerControl::HotbarSlot3) {
+        2
+    } else if action_state.just_pressed(PlayerControl::HotbarSlot4) {
+        3
+    } else if action_state.just_pressed(PlayerControl::HotbarSlot5) {
+        4
+    } else if action_state.just_pressed(PlayerControl::HotbarSlot6) {
+        5
+    } else if action_state.just_pressed(PlayerControl::HotbarSlot7) {
+        6
+    } else if action_state.just_pressed(PlayerControl::HotbarSlot8) {
+        7
+    } else if action_state.just_pressed(PlayerControl::HotbarSlot9) {
+        8
+    } else if action_state.just_pressed(PlayerControl::HotbarSlot10) {
+        9
+    } else {
+        player.current_hotbar_index
+    }
+}
+
+fn drop_item(
+    action_state_qry: Query<&ActionState<PlayerControl>, With<Player>>,
+    player_qry: Query<(Entity, &Inventory, &Player)>,
+    mut item_drop_evr: EventWriter<ItemDropEvent>,
+) {
+    let action_state = action_state_qry.single();
+    let (player_id, player_inventory, player) = player_qry.single();
+
+    if action_state.pressed(PlayerControl::DropItem) {
+        let Some(item_id) = player_inventory.items[player.current_hotbar_index] else { return };
+        item_drop_evr.send(ItemDropEvent {
+            item_id,
+            inventory_id: player_id,
+            item_slot: player.current_hotbar_index,
+        });
+    }
 }

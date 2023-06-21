@@ -13,8 +13,11 @@ use {
     rand::Rng,
 };
 
+//  (0, 1), (1, 1)
+//  (0, 0), (1, 0)
+
 pub const TILE_SIZE: TilemapTileSize = TilemapTileSize { x: 16., y: 16. };
-const TILE_MAP_SIZE: TilemapSize = TilemapSize { x: 16, y: 16 };
+const TILE_MAP_SIZE: TilemapSize = TilemapSize { x: 64, y: 64 };
 pub const BACKGROUND_LAYER: f32 = 1.;
 pub const FOREGROUND_LAYER: f32 = 2.;
 pub const ENTITY_LAYER: f32 = 3.;
@@ -83,17 +86,23 @@ fn spawn_tilemap(mut cmds: Commands, assets: Res<AssetServer>, perlin_map: Res<P
         for x in 0..TILE_MAP_SIZE.x {
             let tile_pos = TilePos { x, y };
 
-            if perlin_map.0.get_value(x as usize, y as usize) > 0.1 {
+            if perlin_map
+                .0
+                .get_value(x as usize, TILE_MAP_SIZE.y as usize - y as usize - 1)
+                > 0.1
+            {
                 // REMOVE THIS
                 let tmp_id = cmds.spawn_empty().id();
                 let tile_id = cmds
                     .spawn((
                         TileBundle {
                             position: tile_pos,
-                            texture_index: TileTextureIndex(if y < TILE_MAP_SIZE.y / 2 {
+                            texture_index: TileTextureIndex(if y == TILE_MAP_SIZE.y - 1 {
+                                0
+                            } else if y > TILE_MAP_SIZE.y / 2 {
                                 1
                             } else {
-                                3
+                                2
                             }),
                             tilemap_id: TilemapId(tilemap_id),
                             ..default()
