@@ -12,7 +12,11 @@ use {
             inventory::{Inventory, ItemDropEvent},
         },
     },
-    bevy::{prelude::*, sprite::collide_aabb},
+    bevy::{
+        input::mouse::{MouseScrollUnit, MouseWheel},
+        prelude::*,
+        sprite::collide_aabb,
+    },
     bevy_rapier2d::prelude::*,
     leafwing_input_manager::prelude::*,
 };
@@ -53,6 +57,7 @@ impl Plugin for PlayerPlugin {
                 interact.in_set(PlayerSystem::Interact),
                 drop_item,
                 update_current_hotbar_index,
+                hotbar_scrolling,
             )
                 .in_set(OnUpdate(GameState::Playing)),
         );
@@ -72,8 +77,6 @@ pub enum PlayerControl {
     Interact,
     DropItem,
     ToggleInventory,
-    NextItem,
-    PreviousItem,
     HotbarSlot1,
     HotbarSlot2,
     HotbarSlot3,
@@ -336,12 +339,28 @@ fn drop_item(
     let action_state = action_state_qry.single();
     let (player_id, player_inventory, player) = player_qry.single();
 
-    if action_state.pressed(PlayerControl::DropItem) {
+    if action_state.just_pressed(PlayerControl::DropItem) {
         let Some(item_id) = player_inventory.items[player.current_hotbar_index] else { return };
         item_drop_evr.send(ItemDropEvent {
             item_id,
             inventory_id: player_id,
             item_slot: player.current_hotbar_index,
         });
+    }
+}
+
+fn hotbar_scrolling(mut scroll_evr: EventReader<MouseWheel>, mut player_qry: Query<&mut Player>) {
+    let mut player = player_qry.single_mut();
+
+    for e in scroll_evr.iter() {
+        match e.unit {
+            MouseScrollUnit::Line => {
+                let offset = e.y.round() as i32 * -1;
+                let old_idx = player.current_hotbar_index as i32;
+                let new_idx = (old_idx + offset).rem_euclid(10);
+                player.current_hotbar_index = new_idx as usize;
+            }
+            _ => (),
+        }
     }
 }

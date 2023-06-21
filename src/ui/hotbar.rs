@@ -153,7 +153,10 @@ fn highlight_selected_slot(
     }
 }
 
-fn click_hotbar_slot(interaction_qry: Query<(&Interaction, &HotbarButton), (With<Button>, Changed<Interaction>)>, mut player_qry: Query<&mut Player>) {
+fn click_hotbar_slot(
+    interaction_qry: Query<(&Interaction, &HotbarButton), (With<Button>, Changed<Interaction>)>,
+    mut player_qry: Query<&mut Player>,
+) {
     let mut player = player_qry.single_mut();
 
     for (interaction, hotbar_button) in interaction_qry.iter() {
