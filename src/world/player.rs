@@ -31,27 +31,26 @@ pub(super) struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_systems(
-                (
-                    load_player_texture,
-                    apply_system_buffers,
-                    spawn_player.in_set(PlayerSystem::SpawnPlayer),
-                )
-                    .chain()
-                    .in_schedule(OnEnter(GameState::Playing)),
+        app.add_systems(
+            (
+                load_player_texture,
+                apply_system_buffers,
+                spawn_player.in_set(PlayerSystem::SpawnPlayer),
             )
-            .add_systems(
-                (
-                    move_player
-                        .in_set(PlayerSystem::MovePlayer)
-                        .after(PhysicsSystem::ZeroVelocityOnCollision)
-                        .before(PhysicsSystem::ApplyVelocity),
-                    attack.in_set(PlayerSystem::Attack),
-                    interact.in_set(PlayerSystem::Interact),
-                )
-                    .in_set(OnUpdate(GameState::Playing)),
-            );
+                .chain()
+                .in_schedule(OnEnter(GameState::Playing)),
+        )
+        .add_systems(
+            (
+                move_player
+                    .in_set(PlayerSystem::MovePlayer)
+                    .after(PhysicsSystem::ZeroVelocityOnCollision)
+                    .before(PhysicsSystem::ApplyVelocity),
+                attack.in_set(PlayerSystem::Attack),
+                interact.in_set(PlayerSystem::Interact),
+            )
+                .in_set(OnUpdate(GameState::Playing)),
+        );
     }
 }
 
@@ -147,8 +146,8 @@ fn spawn_player(mut cmds: Commands, player_texture: Res<PlayerTexture>, assets: 
         },
         Inventory {
             keep_items: true,
-            items: vec![None, None, None],
-            item_slot_count: 3,
+            items: vec![None; 10],
+            item_slot_count: 10,
         },
     ))
     .insert(Name::new("Player"))

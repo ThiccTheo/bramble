@@ -1,38 +1,68 @@
 use {
-    crate::core::{game_state::GameState, graphics::WINDOW_RESOLUTION},
+    crate::{
+        core::{game_state::GameState, graphics::WINDOW_RESOLUTION},
+        logic::inventory::Inventory,
+        rgb_u8,
+        world::player::Player,
+    },
     bevy::prelude::*,
+};
+
+const HOTBAR_ITEM_SIZE: Vec2 = Vec2::splat(32.);
+const HOTBAR_ITEM_COUNT: usize = 10;
+const HOTBAR_ITEM_PADDING: f32 = 5.;
+const HOTBAR_WIDTH: f32 =
+    HOTBAR_ITEM_SIZE.x * HOTBAR_ITEM_COUNT as f32 + HOTBAR_ITEM_COUNT as f32 * HOTBAR_ITEM_PADDING;
+const HOTBAR_HEIGHT: f32 = HOTBAR_ITEM_SIZE.y + 2. * HOTBAR_ITEM_PADDING;
+const HOTBAR_SIZE: Size = Size {
+    width: Val::Px(HOTBAR_WIDTH),
+    height: Val::Px(HOTBAR_HEIGHT),
 };
 
 pub(super) struct HotbarPlugin;
 
 impl Plugin for HotbarPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(spawn_hotbar.in_schedule(OnEnter(GameState::Playing)));
+        app.add_system(spawn_hotbar.in_schedule(OnEnter(GameState::Playing)))
+            .add_systems(
+                (populate_hotbar, update_hotbar_items).in_set(OnUpdate(GameState::Playing)),
+            );
     }
 }
 
+#[derive(Component)]
+pub struct Hotbar;
+
+#[derive(Component, Default, Reflect)]
+pub struct HotbarSlot {
+    pub item_id: Option<Entity>,
+}
+
 fn spawn_hotbar(mut cmds: Commands, assets: Res<AssetServer>) {
-    cmds.spawn(NodeBundle {
-        style: Style {
-            size: Size::new(Val::Px(160. + 50.), Val::Px(32. + 20.)),
-            justify_content: JustifyContent::SpaceEvenly,
-            flex_direction: FlexDirection::Row,
-            align_items: AlignItems::Center,
-            position: UiRect {
-                left: Val::Px(WINDOW_RESOLUTION.x / 2. - (160. + 50.) / 2.),
-                top: Val::Px(WINDOW_RESOLUTION.y - 64.),
+    cmds.spawn((
+        NodeBundle {
+            style: Style {
+                size: HOTBAR_SIZE,
+                justify_content: JustifyContent::SpaceEvenly,
+                flex_direction: FlexDirection::Row,
+                align_items: AlignItems::Center,
+                position: UiRect {
+                    left: Val::Px(WINDOW_RESOLUTION.x / 2. - HOTBAR_WIDTH / 2.),
+                    top: Val::Px(WINDOW_RESOLUTION.y - HOTBAR_ITEM_SIZE.y * 2.),
+                    ..default()
+                },
                 ..default()
             },
+            background_color: Color::BLACK.into(),
             ..default()
         },
-        background_color: Color::BLACK.into(),
-        ..default()
-    })
+        Hotbar,
+    ))
     .with_children(|parent| {
-        for i in 1..=5 {
+        for i in 1..=HOTBAR_ITEM_COUNT {
             parent
                 .spawn(ButtonBundle {
-                    background_color: Color::WHITE.into(),
+                    background_color: rgb_u8!(220, 220, 220).into(),
                     style: Style {
                         size: Size::all(Val::Px(32.)),
                         align_items: AlignItems::FlexStart,
@@ -57,7 +87,38 @@ fn spawn_hotbar(mut cmds: Commands, assets: Res<AssetServer>) {
                         },
                         ..default()
                     });
+                })
+                .with_children(|parent| {
+                    parent.spawn((ImageBundle::default(), HotbarSlot::default()));
                 });
         }
     });
+}
+
+fn populate_hotbar(
+    player_qry: Query<&Inventory, With<Player>>,
+    mut hotbar_item_qry: Query<&mut HotbarSlot>,
+) {
+    let player_inventory = player_qry.single();
+
+    for (&item_id, mut hotbar_slot) in player_inventory
+        .items
+        .iter()
+        .take(HOTBAR_ITEM_COUNT)
+        .zip(hotbar_item_qry.iter_mut())
+    {
+        // UB
+        hotbar_slot.item_id = item_id;
+    }
+}
+
+fn update_hotbar_items(
+    mut hotbar_item_qry: Query<(&mut UiImage, &HotbarSlot)>,
+    sprite_qry: Query<&Handle<Image>, Or<(With<Sprite>, With<TextureAtlasSprite>)>>,
+) {
+    for (mut old_hotbar_img, hotbar_slot) in hotbar_item_qry.iter_mut() {
+        let Some(item_id) = hotbar_slot.item_id else { continue };
+        let Ok(new_hotbar_img) = sprite_qry.get(item_id) else { continue };
+        old_hotbar_img.texture = new_hotbar_img.clone();
+    }
 }

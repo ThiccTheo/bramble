@@ -57,6 +57,7 @@ fn handle_item_drops(
     mut cmds: Commands,
     mut item_drop_evr: EventReader<ItemDropEvent>,
     mut inventory_qry: Query<(&mut Inventory, &mut Transform)>,
+    assets: Res<AssetServer>
 ) {
     for ItemDropEvent {
         item_id,
@@ -71,11 +72,11 @@ fn handle_item_drops(
         cmds.entity(*item_id).insert((
             SpriteBundle {
                 sprite: Sprite {
-                    color: Color::RED,
                     custom_size: Some(Vec2::splat(8.)),
                     ..default()
                 },
                 transform: *transform,
+                texture: assets.load("images/player.png"),
                 ..default()
             },
             DroppedItem,
@@ -89,6 +90,7 @@ fn handle_item_pickups(
     mut cmds: Commands,
     mut item_pickup_evr: EventReader<ItemPickupEvent>,
     mut inventory_qry: Query<&mut Inventory>,
+    mut visibility_qry: Query<&mut Visibility>,
 ) {
     for ItemPickupEvent {
         item_id,
@@ -99,9 +101,12 @@ fn handle_item_pickups(
         let Some(empty_slot) = inventory.items.iter_mut().position(|item_slot| item_slot.is_none()) else { continue };
         inventory.items[empty_slot] = Some(*item_id);
         cmds.entity(*item_id)
-            .remove::<SpriteBundle>()
             .remove::<DroppedItem>()
-            .remove::<BoundingBox>();
+            .remove::<BoundingBox>()
+            .remove::<Transform>();
+
+        let Ok(mut visibility) = visibility_qry.get_mut(*item_id) else { continue };
+        *visibility = Visibility::Hidden;
     }
 }
 

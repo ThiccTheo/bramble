@@ -15,7 +15,7 @@ use {
     bevy_rapier2d::prelude::*,
     leafwing_input_manager::prelude::*,
     logic::{inventory::Inventory, LogicPlugins},
-    ui::UiPlugins,
+    ui::{UiPlugins, hotbar::HotbarSlot},
     world::{player::PlayerControl, WorldPlugins},
 };
 
@@ -45,6 +45,7 @@ fn main() {
         .add_plugin(WorldInspectorPlugin::default())
         .register_type::<TextureAtlasSprite>()
         .register_type::<Inventory>()
+        .register_type::<HotbarSlot>()
         .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(TilemapPlugin)
         .add_plugins(CorePlugins)
