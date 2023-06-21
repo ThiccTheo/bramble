@@ -1,5 +1,6 @@
 mod core;
 mod logic;
+mod ui;
 mod world;
 
 use {
@@ -13,7 +14,8 @@ use {
     bevy_inspector_egui::quick::WorldInspectorPlugin,
     bevy_rapier2d::prelude::*,
     leafwing_input_manager::prelude::*,
-    logic::{LogicPlugins, inventory::Inventory},
+    logic::{inventory::Inventory, LogicPlugins},
+    ui::UiPlugins,
     world::{player::PlayerControl, WorldPlugins},
 };
 
@@ -48,5 +50,6 @@ fn main() {
         .add_plugins(CorePlugins)
         .add_plugins(LogicPlugins)
         .add_plugins(WorldPlugins)
+        .add_plugins(UiPlugins)
         .run();
 }

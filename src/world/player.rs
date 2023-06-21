@@ -31,25 +31,27 @@ pub(super) struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            (
-                load_player_texture,
-                spawn_player.in_set(PlayerSystem::SpawnPlayer),
+        app
+            .add_systems(
+                (
+                    load_player_texture,
+                    apply_system_buffers,
+                    spawn_player.in_set(PlayerSystem::SpawnPlayer),
+                )
+                    .chain()
+                    .in_schedule(OnEnter(GameState::Playing)),
             )
-                .chain()
-                .in_schedule(OnEnter(GameState::Playing)),
-        )
-        .add_systems(
-            (
-                move_player
-                    .in_set(PlayerSystem::MovePlayer)
-                    .after(PhysicsSystem::ZeroVelocityOnCollision)
-                    .before(PhysicsSystem::ApplyVelocity),
-                attack.in_set(PlayerSystem::Attack),
-                interact.in_set(PlayerSystem::Interact),
-            )
-                .in_set(OnUpdate(GameState::Playing)),
-        );
+            .add_systems(
+                (
+                    move_player
+                        .in_set(PlayerSystem::MovePlayer)
+                        .after(PhysicsSystem::ZeroVelocityOnCollision)
+                        .before(PhysicsSystem::ApplyVelocity),
+                    attack.in_set(PlayerSystem::Attack),
+                    interact.in_set(PlayerSystem::Interact),
+                )
+                    .in_set(OnUpdate(GameState::Playing)),
+            );
     }
 }
 
@@ -66,12 +68,14 @@ pub enum PlayerControl {
     Interact,
     DropItem,
     ToggleInventory,
+    NextItem,
+    PreviousItem,
 }
 
 #[derive(Component)]
 pub struct Player;
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 struct PlayerTexture(Handle<TextureAtlas>);
 
 fn load_player_texture(
@@ -108,7 +112,7 @@ fn spawn_player(mut cmds: Commands, player_texture: Res<PlayerTexture>, assets: 
         Velocity::default(),
         Friction::new(DEFAULT_PLAYER_FRICTION_COEFFICIENT),
         SpriteSheetBundle {
-            transform: Transform::from_xyz(0., 1000., ENTITY_LAYER),
+            transform: Transform::from_xyz(0., 100., ENTITY_LAYER),
             sprite: TextureAtlasSprite {
                 index: 0,
                 ..default()
@@ -136,10 +140,17 @@ fn spawn_player(mut cmds: Commands, player_texture: Res<PlayerTexture>, assets: 
                 .insert_many_to_one(
                     [KeyCode::Minus, KeyCode::NumpadSubtract, KeyCode::Underline],
                     PlayerControl::ZoomOut,
-                ).insert_many_to_one([KeyCode::LAlt, KeyCode::I], PlayerControl::ToggleInventory).insert(KeyCode::Q, PlayerControl::DropItem)
+                )
+                .insert_many_to_one([KeyCode::LAlt, KeyCode::I], PlayerControl::ToggleInventory)
+                .insert(KeyCode::Q, PlayerControl::DropItem)
                 .build(),
         },
-    Inventory { keep_items: true, items: vec![None, None, None], item_slot_count: 3 },))
+        Inventory {
+            keep_items: true,
+            items: vec![None, None, None],
+            item_slot_count: 3,
+        },
+    ))
     .insert(Name::new("Player"))
     .with_children(|player| {
         player.spawn((

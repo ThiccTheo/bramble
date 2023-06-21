@@ -120,7 +120,10 @@ fn collect_items(
             )
             .is_some()
             {
-                item_pickup_evw.send(ItemPickupEvent { item_id, inventory_id });
+                item_pickup_evw.send(ItemPickupEvent {
+                    item_id,
+                    inventory_id,
+                });
             }
         }
     }
