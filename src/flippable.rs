@@ -1,8 +1,8 @@
-use {crate::core::game_state::GameState, bevy::prelude::*};
+use {super::game_state::GameState, bevy::prelude::*};
 
-pub(super) struct AnimationPlugin;
+pub struct FlippablePlugin;
 
-impl Plugin for AnimationPlugin {
+impl Plugin for FlippablePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             (propagate_sprite_flips, convert_flippables_to_sprite_flips)

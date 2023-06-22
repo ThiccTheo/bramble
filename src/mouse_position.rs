@@ -1,9 +1,9 @@
 use {
-    crate::{core::game_state::GameState, world::main_camera::MainCamera},
+    super::{game_state::GameState, main_camera::MainCamera},
     bevy::{prelude::*, window::PrimaryWindow},
 };
 
-pub(super) struct MousePositionPlugin;
+pub struct MousePositionPlugin;
 
 impl Plugin for MousePositionPlugin {
     fn build(&self, app: &mut App) {

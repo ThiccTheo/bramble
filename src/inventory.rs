@@ -1,8 +1,5 @@
 use {
-    crate::{
-        core::{game_state::GameState, physics::BoundingBox},
-        world::world_generation::ENTITY_LAYER,
-    },
+    crate::{bounding_box::BoundingBox, game_state::GameState, world_generation::ENTITY_LAYER},
     bevy::{prelude::*, sprite::collide_aabb},
     std::time::Duration,
 };
@@ -97,6 +94,9 @@ fn handle_item_drops(
                 texture: assets.load("images/player.png"),
                 ..default()
             },
+            // RigidBody::Dynamic,
+            // Collider::cuboid(4., 4.),
+            // Velocity::zero(),
             DroppedItem::new(*inventory_id),
             BoundingBox::new(8., 8.),
         ));
@@ -121,7 +121,11 @@ fn handle_item_pickups(
         cmds.entity(*item_id)
             .remove::<DroppedItem>()
             .remove::<BoundingBox>()
-            .remove::<Transform>();
+            .remove::<Transform>()
+            // .remove::<RigidBody>()
+            // .remove::<Collider>()
+            // .remove::<Velocity>()
+            ;
 
         let Ok(mut visibility) = visibility_qry.get_mut(*item_id) else { continue };
         *visibility = Visibility::Hidden;

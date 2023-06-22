@@ -1,16 +1,14 @@
 use {
-    super::world_generation::{ENTITY_LAYER, TILE_SIZE},
-    crate::{
-        core::{
-            animation::Flippable,
-            game_state::GameState,
-            mouse_position::MousePosition,
-            physics::{BoundingBox, PhysicsSystem},
-        },
-        logic::{
-            health::DamageEvent,
-            inventory::{Inventory, ItemDropEvent},
-        },
+    super::{
+        bounding_box::BoundingBox,
+        damage::DamageDealtEvent,
+        flippable::Flippable,
+        game_state::GameState,
+        inventory::{Inventory, ItemDropEvent},
+        mouse_position::MousePosition,
+        physics,
+        tile::TILE_SIZE,
+        world_generation::ENTITY_LAYER,
     },
     bevy::{
         input::mouse::{MouseScrollUnit, MouseWheel},
@@ -22,19 +20,11 @@ use {
 };
 
 pub const PLAYER_SIZE: Vec2 = Vec2::new(12., 21.);
-const DEFAULT_PLAYER_MOVE_AMOUNT: f32 = 20.;
-const DEFAULT_PLAYER_JUMP_POWER: f32 = 300.;
+const DEFAULT_PLAYER_MOVE_AMOUNT: f32 = 5000.;
 const DEFAULT_PLAYER_FRICTION_COEFFICIENT: f32 = 10.;
+const DEFAULT_PLAYER_JUMP_POWER: f32 = 350.;
 
-#[derive(SystemSet, Hash, Debug, PartialEq, Eq, Clone)]
-pub enum PlayerSystem {
-    SpawnPlayer,
-    MovePlayer,
-    Attack,
-    Interact,
-}
-
-pub(super) struct PlayerPlugin;
+pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
@@ -42,22 +32,21 @@ impl Plugin for PlayerPlugin {
             (
                 load_player_texture,
                 apply_system_buffers,
-                spawn_player.in_set(PlayerSystem::SpawnPlayer),
+                spawn_player,
             )
                 .chain()
                 .in_schedule(OnEnter(GameState::Playing)),
         )
         .add_systems(
             (
-                move_player
-                    .in_set(PlayerSystem::MovePlayer)
-                    .after(PhysicsSystem::ZeroVelocityOnCollision)
-                    .before(PhysicsSystem::ApplyVelocity),
-                attack.in_set(PlayerSystem::Attack),
-                interact.in_set(PlayerSystem::Interact),
+                attack,
+                interact,
                 drop_item,
                 update_current_hotbar_index,
                 hotbar_scrolling,
+                move_player
+                    .after(physics::zero_velocity_on_collision)
+                    .before(physics::apply_velocity)
             )
                 .in_set(OnUpdate(GameState::Playing)),
         );
@@ -231,7 +220,7 @@ fn spawn_player(mut cmds: Commands, player_texture: Res<PlayerTexture>, assets: 
     });
 }
 
-fn move_player(
+pub fn move_player(
     mut player_qry: Query<
         (
             &mut Flippable,
@@ -240,21 +229,23 @@ fn move_player(
         ),
         With<Player>,
     >,
+    time: Res<Time>,
     action_state_qry: Query<&ActionState<PlayerControl>, With<Player>>,
 ) {
     let Ok((mut player_flippable, player_ctrl_out, mut player_vel)) = player_qry.get_single_mut() else {return};
     let action_state = action_state_qry.single();
+    let dt = time.delta_seconds();
 
     if action_state.pressed(PlayerControl::MoveLeft) {
-        player_vel.linvel.x -= DEFAULT_PLAYER_MOVE_AMOUNT;
+        player_vel.linvel.x -= DEFAULT_PLAYER_MOVE_AMOUNT * dt;
         player_flippable.flip_x = true;
     }
     if action_state.pressed(PlayerControl::MoveRight) {
-        player_vel.linvel.x += DEFAULT_PLAYER_MOVE_AMOUNT;
+        player_vel.linvel.x += DEFAULT_PLAYER_MOVE_AMOUNT * dt;
         player_flippable.flip_x = false;
     }
     if action_state.just_pressed(PlayerControl::Jump) && player_ctrl_out.grounded {
-        player_vel.linvel.y += DEFAULT_PLAYER_JUMP_POWER;
+        player_vel.linvel.y += DEFAULT_PLAYER_JUMP_POWER * dt;
     }
 }
 
@@ -262,7 +253,7 @@ fn attack(
     mut player_qry: Query<(&Transform, &mut Flippable), With<Player>>,
     action_state_qry: Query<&ActionState<PlayerControl>, With<Player>>,
     tiles_qry: Query<(Entity, &Transform)>,
-    mut dmg_evw: EventWriter<DamageEvent>,
+    mut dmg_evw: EventWriter<DamageDealtEvent>,
     mouse_pos: Res<MousePosition>,
 ) {
     let (player_transform, mut player_flippable) = player_qry.single_mut();
@@ -283,7 +274,7 @@ fn attack(
             )
             .is_some()
             {
-                dmg_evw.send(DamageEvent {
+                dmg_evw.send(DamageDealtEvent {
                     damage_dealt: 10,
                     target_id: tile_id,
                 });
@@ -353,14 +344,11 @@ fn hotbar_scrolling(mut scroll_evr: EventReader<MouseWheel>, mut player_qry: Que
     let mut player = player_qry.single_mut();
 
     for e in scroll_evr.iter() {
-        match e.unit {
-            MouseScrollUnit::Line => {
-                let offset = e.y.round() as i32 * -1;
-                let old_idx = player.current_hotbar_index as i32;
-                let new_idx = (old_idx + offset).rem_euclid(10);
-                player.current_hotbar_index = new_idx as usize;
-            }
-            _ => (),
+        if e.unit == MouseScrollUnit::Line {
+            let offset = -(e.y.round() as i32);
+            let old_idx = player.current_hotbar_index as i32;
+            let new_idx = (old_idx + offset).rem_euclid(10);
+            player.current_hotbar_index = new_idx as usize;
         }
     }
 }

@@ -1,10 +1,5 @@
 use {
-    crate::{
-        core::{game_state::GameState, graphics::WINDOW_RESOLUTION},
-        logic::inventory::Inventory,
-        rgb_u8,
-        world::player::Player,
-    },
+    crate::{game_state::GameState, inventory::Inventory, player::Player, rgb_u8},
     bevy::prelude::*,
 };
 
@@ -56,8 +51,8 @@ fn spawn_hotbar(mut cmds: Commands, assets: Res<AssetServer>) {
                 flex_direction: FlexDirection::Row,
                 align_items: AlignItems::Center,
                 position: UiRect {
-                    left: Val::Px(WINDOW_RESOLUTION.x / 2. - HOTBAR_WIDTH / 2.),
-                    top: Val::Px(WINDOW_RESOLUTION.y - HOTBAR_ITEM_SIZE.y * 2.),
+                    left: Val::Px(1280. / 2. - HOTBAR_WIDTH / 2.),
+                    top: Val::Px(720. - HOTBAR_ITEM_SIZE.y * 2.),
                     ..default()
                 },
                 ..default()
@@ -160,9 +155,8 @@ fn click_hotbar_slot(
     let mut player = player_qry.single_mut();
 
     for (interaction, hotbar_button) in interaction_qry.iter() {
-        match *interaction {
-            Interaction::Clicked => player.current_hotbar_index = hotbar_button.0 - 1,
-            _ => (),
+        if *interaction == Interaction::Clicked {
+            player.current_hotbar_index = hotbar_button.0 - 1;
         }
     }
 }

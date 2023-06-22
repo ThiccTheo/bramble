@@ -1,6 +1,8 @@
 use {
-    super::player::{Player, PlayerControl, PlayerSystem},
-    crate::core::game_state::GameState,
+    super::{
+        game_state::GameState,
+        player::{self, Player, PlayerControl},
+    },
     bevy::prelude::*,
     leafwing_input_manager::prelude::*,
 };
@@ -13,31 +15,12 @@ const CAMERA_ZOOM_IN_LIMIT: f32 = DEFAULT_CAMERA_ZOOM - CAMERA_ZOOM_OFFSET;
 const CAMERA_ZOOM_OUT_LIMIT: f32 = DEFAULT_CAMERA_ZOOM + CAMERA_ZOOM_OFFSET;
 const DEFAULT_CAMERA_Z: f32 = 999.9;
 
-#[derive(SystemSet, Hash, Debug, PartialEq, Eq, Clone)]
-pub enum MainCameraSystem {
-    SpawnMainCamera,
-    FollowPlayer,
-    AdjustZoom,
-}
-
 pub(super) struct MainCameraPlugin;
 
 impl Plugin for MainCameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(
-            spawn_main_camera
-                .in_set(MainCameraSystem::SpawnMainCamera)
-                .in_schedule(OnEnter(GameState::Playing)),
-        )
-        .add_systems(
-            (
-                follow_player
-                    .in_set(MainCameraSystem::FollowPlayer)
-                    .after(PlayerSystem::MovePlayer),
-                adjust_zoom.in_set(MainCameraSystem::AdjustZoom),
-            )
-                .in_set(OnUpdate(GameState::Playing)),
-        );
+        app.add_system(spawn_main_camera.in_schedule(OnEnter(GameState::Playing)))
+            .add_systems((follow_player.after(player::move_player), adjust_zoom).in_set(OnUpdate(GameState::Playing)));
     }
 }
 
