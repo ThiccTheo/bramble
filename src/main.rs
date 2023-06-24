@@ -1,11 +1,13 @@
 mod bounding_box;
 mod combat;
+mod crafting;
 mod damage;
 mod flippable;
 mod game_state;
 mod health;
 mod hotbar;
 mod inventory;
+mod item;
 mod main_camera;
 mod mouse_position;
 mod physics;
@@ -21,6 +23,7 @@ use {
     bevy_inspector_egui::quick::WorldInspectorPlugin,
     bevy_rapier2d::prelude::*,
     combat::CombatPlugin,
+    crafting::CraftingPlugin,
     damage::DamagePlugin,
     flippable::FlippablePlugin,
     game_state::GameState,
@@ -59,6 +62,7 @@ fn main() {
         .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(TilemapPlugin)
         .add_plugin(CombatPlugin)
+        .add_plugin(CraftingPlugin)
         .add_plugin(DamagePlugin)
         .add_plugin(FlippablePlugin)
         .add_plugin(HealthPlugin)

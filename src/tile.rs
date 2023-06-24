@@ -4,6 +4,7 @@ use {
         game_state::GameState,
         health::Health,
         inventory::Inventory,
+        item::Item,
         world_generation::{ForegroundTilemap, FOREGROUND_LAYER},
     },
     bevy::prelude::*,
@@ -36,8 +37,26 @@ pub fn spawn_tile(
     tex_idx: TileTextureIndex,
     fg_tilemap_id: TilemapId,
     fg_tile_storage: &mut TileStorage,
+    assets: &Res<AssetServer>,
 ) {
-    let block_id = cmds.spawn_empty().id();
+    let item_id = cmds
+        .spawn((
+            Item {
+                can_stack: true,
+                ..default()
+            },
+            SpriteBundle {
+                sprite: Sprite {
+                    custom_size: Some(Vec2::splat(8.)),
+                    ..default()
+                },
+                texture: assets.load("images/player.png"),
+                visibility: Visibility::Hidden,
+                ..default()
+            },
+        ))
+        .id();
+
     let tile_id = cmds
         .spawn((
             Tile,
@@ -51,7 +70,7 @@ pub fn spawn_tile(
             BoundingBox::new(TILE_SIZE.x, TILE_SIZE.y),
             Inventory {
                 keep_items: false,
-                items: vec![Some(block_id)],
+                item_slots: vec![Some(vec![item_id])],
                 item_slot_count: 1,
             },
         ))

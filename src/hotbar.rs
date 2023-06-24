@@ -108,14 +108,15 @@ fn populate_hotbar(
 ) {
     let player_inventory = player_qry.single();
 
-    for (&item_id, mut hotbar_slot) in player_inventory
-        .items
+    for (item_slot, mut hotbar_slot) in player_inventory
+        .item_slots
         .iter()
         .take(HOTBAR_ITEM_COUNT)
         .zip(hotbar_item_qry.iter_mut())
     {
-        // UB
-        hotbar_slot.item_id = item_id;
+        hotbar_slot.item_id = item_slot
+            .as_ref()
+            .and_then(|items| items.get(0).map(|&item| item));
     }
 }
 

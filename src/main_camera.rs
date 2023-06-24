@@ -15,12 +15,15 @@ const CAMERA_ZOOM_IN_LIMIT: f32 = DEFAULT_CAMERA_ZOOM - CAMERA_ZOOM_OFFSET;
 const CAMERA_ZOOM_OUT_LIMIT: f32 = DEFAULT_CAMERA_ZOOM + CAMERA_ZOOM_OFFSET;
 const DEFAULT_CAMERA_Z: f32 = 999.9;
 
-pub(super) struct MainCameraPlugin;
+pub struct MainCameraPlugin;
 
 impl Plugin for MainCameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(spawn_main_camera.in_schedule(OnEnter(GameState::Playing)))
-            .add_systems((follow_player.after(player::move_player), adjust_zoom).in_set(OnUpdate(GameState::Playing)));
+            .add_systems(
+                (follow_player.after(player::move_player), adjust_zoom)
+                    .in_set(OnUpdate(GameState::Playing)),
+            );
     }
 }
 

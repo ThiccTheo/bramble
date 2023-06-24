@@ -29,11 +29,7 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            (
-                load_player_texture,
-                apply_system_buffers,
-                spawn_player,
-            )
+            (load_player_texture, apply_system_buffers, spawn_player)
                 .chain()
                 .in_schedule(OnEnter(GameState::Playing)),
         )
@@ -46,7 +42,7 @@ impl Plugin for PlayerPlugin {
                 hotbar_scrolling,
                 move_player
                     .after(physics::zero_velocity_on_collision)
-                    .before(physics::apply_velocity)
+                    .before(physics::apply_velocity),
             )
                 .in_set(OnUpdate(GameState::Playing)),
         );
@@ -195,7 +191,7 @@ fn spawn_player(mut cmds: Commands, player_texture: Res<PlayerTexture>, assets: 
         },
         Inventory {
             keep_items: true,
-            items: vec![None; 10],
+            item_slots: vec![None; 10],
             item_slot_count: 10,
         },
     ))
@@ -331,12 +327,14 @@ fn drop_item(
     let (player_id, player_inventory, player) = player_qry.single();
 
     if action_state.just_pressed(PlayerControl::DropItem) {
-        let Some(item_id) = player_inventory.items[player.current_hotbar_index] else { return };
-        item_drop_evr.send(ItemDropEvent {
-            item_id,
-            inventory_id: player_id,
-            item_slot: player.current_hotbar_index,
-        });
+        let Some(Some(items)) = player_inventory.item_slots.get(player.current_hotbar_index) else { return };
+
+        for _ in items.iter() {
+            item_drop_evr.send(ItemDropEvent {
+                inventory_id: player_id,
+                item_slot: player.current_hotbar_index,
+            });
+        }
     }
 }
 

@@ -92,6 +92,7 @@ pub fn spawn_tilemap(mut cmds: Commands, assets: Res<AssetServer>, perlin_map: R
                     tex_idx,
                     TilemapId(tilemap_id),
                     &mut tile_storage,
+                    &assets,
                 );
             }
         }

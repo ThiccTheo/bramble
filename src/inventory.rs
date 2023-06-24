@@ -1,16 +1,15 @@
+use bevy_rapier2d::prelude::Collider;
+
 use {
-    crate::{bounding_box::BoundingBox, game_state::GameState, world_generation::ENTITY_LAYER},
+    super::{
+        bounding_box::BoundingBox, game_state::GameState, item::Item,
+        world_generation::ENTITY_LAYER,
+    },
     bevy::{prelude::*, sprite::collide_aabb},
     std::time::Duration,
 };
 
-#[derive(SystemSet, Hash, Debug, PartialEq, Eq, Clone)]
-pub enum InventorySystem {
-    HandleItemDrops,
-    HandleItemPickups,
-}
-
-pub(super) struct InventoryPlugin;
+pub struct InventoryPlugin;
 
 impl Plugin for InventoryPlugin {
     fn build(&self, app: &mut App) {
@@ -18,9 +17,9 @@ impl Plugin for InventoryPlugin {
             .add_event::<ItemPickupEvent>()
             .add_systems(
                 (
-                    handle_item_drops.in_set(InventorySystem::HandleItemDrops),
-                    collect_items,
-                    handle_item_pickups.in_set(InventorySystem::HandleItemPickups),
+                    on_item_drops,
+                    intersect_items,
+                    on_item_pickups,
                     update_item_pickup_delays,
                 )
                     .in_set(OnUpdate(GameState::Playing)),
@@ -28,14 +27,12 @@ impl Plugin for InventoryPlugin {
     }
 }
 
-#[derive(Component, Default, Reflect)]
+#[derive(Component, Default)]
 pub struct Inventory {
-    pub items: Vec<ItemSlot>,
+    pub item_slots: Vec<Option<Vec<Entity>>>,
     pub item_slot_count: usize,
     pub keep_items: bool,
 }
-
-pub type ItemSlot = Option<Entity>;
 
 #[derive(Component)]
 pub struct DroppedItem {
@@ -57,7 +54,6 @@ impl DroppedItem {
 }
 
 pub struct ItemDropEvent {
-    pub item_id: Entity,
     pub inventory_id: Entity,
     pub item_slot: usize,
 }
@@ -67,72 +63,86 @@ pub struct ItemPickupEvent {
     pub inventory_id: Entity,
 }
 
-// TODO: Sprite stuff for the item drops
-fn handle_item_drops(
+fn on_item_drops(
     mut cmds: Commands,
     mut item_drop_evr: EventReader<ItemDropEvent>,
     mut inventory_qry: Query<(&mut Inventory, &mut Transform)>,
-    assets: Res<AssetServer>,
+    mut item_qry: Query<(&mut Transform, &mut Visibility), (With<Item>, Without<Inventory>)>,
 ) {
     for ItemDropEvent {
-        item_id,
         inventory_id,
         item_slot,
     } in item_drop_evr.iter()
     {
-        let Ok((mut inventory, mut transform)) = inventory_qry.get_mut(*inventory_id) else { continue };
-        let Some(item) = inventory.items.get_mut(*item_slot) else { continue };
-        transform.translation.z = ENTITY_LAYER;
+        let inventory_id = *inventory_id;
+        let item_slot = *item_slot;
 
-        cmds.entity(*item_id).insert((
-            SpriteBundle {
-                sprite: Sprite {
-                    custom_size: Some(Vec2::splat(8.)),
-                    ..default()
-                },
-                transform: *transform,
-                texture: assets.load("images/player.png"),
-                ..default()
-            },
-            // RigidBody::Dynamic,
-            // Collider::cuboid(4., 4.),
-            // Velocity::zero(),
-            DroppedItem::new(*inventory_id),
-            BoundingBox::new(8., 8.),
-        ));
-        *item = None;
+        let Ok((mut inventory, mut inventory_transform)) = inventory_qry.get_mut(inventory_id) else { continue };
+        let Some(Some(items)) = inventory.item_slots.get_mut(item_slot) else { continue };
+
+        inventory_transform.translation.z = ENTITY_LAYER;
+
+        let Some(item_id) = items.pop() else { continue };
+        let Ok((mut item_transform, mut item_visibility)) = item_qry.get_mut(item_id) else { continue };
+
+        *item_transform = *inventory_transform;
+        *item_visibility = Visibility::Visible;
+        cmds.entity(item_id)
+            .insert((DroppedItem::new(inventory_id), BoundingBox::new(8., 8.)));
+
+        if inventory.item_slots[item_slot]
+            .as_ref()
+            .is_some_and(|items| items.is_empty())
+        {
+            inventory.item_slots[item_slot] = None;
+        }
     }
 }
 
-fn handle_item_pickups(
+fn on_item_pickups(
     mut cmds: Commands,
     mut item_pickup_evr: EventReader<ItemPickupEvent>,
     mut inventory_qry: Query<&mut Inventory>,
     mut visibility_qry: Query<&mut Visibility>,
+    item_qry: Query<&Item>,
 ) {
     for ItemPickupEvent {
-        item_id,
+        item_id: tmp,
         inventory_id,
     } in item_pickup_evr.iter()
     {
+        let Ok(new_item) = item_qry.get(*tmp) else { continue };
         let Ok(mut inventory) = inventory_qry.get_mut(*inventory_id) else { continue };
-        let Some(empty_slot) = inventory.items.iter_mut().position(|item_slot| item_slot.is_none()) else { continue };
-        inventory.items[empty_slot] = Some(*item_id);
-        cmds.entity(*item_id)
-            .remove::<DroppedItem>()
-            .remove::<BoundingBox>()
-            .remove::<Transform>()
-            // .remove::<RigidBody>()
-            // .remove::<Collider>()
-            // .remove::<Velocity>()
-            ;
 
-        let Ok(mut visibility) = visibility_qry.get_mut(*item_id) else { continue };
+        // Not finding proper item slot
+        let item_slot = inventory
+            .item_slots
+            .iter_mut()
+            .position(|item_slot|
+                item_slot.as_ref().is_some_and(|items|
+                    items.len() < 5 && items.first().is_some_and(|&item_id|
+                        item_qry.get(item_id).is_ok_and(|item|
+                            item.can_stack && item.id == new_item.id
+                        )
+                    )
+                )
+            );
+        // works but not if full inventory
+        let item_slot = item_slot.unwrap_or(inventory.item_slots.iter().position(|item_slot| item_slot.is_none()).unwrap());
+
+        if let Some(Some(items)) = inventory.item_slots.get_mut(item_slot) {
+            items.push(*tmp);
+        } else {
+            inventory.item_slots[item_slot] = Some(vec![*tmp]);
+        }
+        cmds.entity(*tmp).remove::<DroppedItem>();
+
+        let Ok(mut visibility) = visibility_qry.get_mut(*tmp) else { continue };
         *visibility = Visibility::Hidden;
     }
 }
 
-fn collect_items(
+fn intersect_items(
     mut item_pickup_evw: EventWriter<ItemPickupEvent>,
     inventory_qry: Query<(Entity, &Transform, &BoundingBox)>,
     dropped_item_qry: Query<(Entity, &Transform, &BoundingBox, &DroppedItem)>,

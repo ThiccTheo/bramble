@@ -11,11 +11,7 @@ impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(FixedTime::new(Duration::from_millis(16)))
             .add_systems(
-                (
-                    zero_velocity_on_collision,
-                    apply_velocity,
-                )
-                    .in_set(OnUpdate(GameState::Playing)),
+                (zero_velocity_on_collision, apply_velocity).in_set(OnUpdate(GameState::Playing)),
             );
     }
 }
