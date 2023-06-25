@@ -1,18 +1,20 @@
 mod bounding_box;
+mod collision;
 mod combat;
 mod crafting;
 mod damage;
 mod flippable;
 mod game_state;
+mod gravity;
 mod health;
 mod hotbar;
 mod inventory;
 mod item;
 mod main_camera;
 mod mouse_position;
-mod physics;
 mod player;
 mod rgb_u8;
+mod terminal_velocity;
 mod tile;
 mod ui_root;
 mod world_generation;
@@ -22,6 +24,7 @@ use {
     bevy_ecs_tilemap::prelude::*,
     bevy_inspector_egui::quick::WorldInspectorPlugin,
     bevy_rapier2d::prelude::*,
+    collision::CollisionPlugin,
     combat::CombatPlugin,
     crafting::CraftingPlugin,
     damage::DamagePlugin,
@@ -33,7 +36,6 @@ use {
     leafwing_input_manager::prelude::*,
     main_camera::MainCameraPlugin,
     mouse_position::MousePositionPlugin,
-    physics::PhysicsPlugin,
     player::{PlayerControl, PlayerPlugin},
     tile::TilePlugin,
     ui_root::UiRootPlugin,
@@ -70,7 +72,7 @@ fn main() {
         .add_plugin(InventoryPlugin)
         .add_plugin(MainCameraPlugin)
         .add_plugin(MousePositionPlugin)
-        .add_plugin(PhysicsPlugin)
+        .add_plugin(CollisionPlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(TilePlugin)
         .add_plugin(UiRootPlugin)

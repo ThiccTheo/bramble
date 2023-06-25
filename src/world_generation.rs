@@ -20,7 +20,7 @@ pub const _BACKGROUND_LAYER: f32 = 1.;
 pub const FOREGROUND_LAYER: f32 = 2.;
 pub const ENTITY_LAYER: f32 = 3.;
 
-pub(super) struct WorldGenerationPlugin;
+pub struct WorldGenerationPlugin;
 
 impl Plugin for WorldGenerationPlugin {
     fn build(&self, app: &mut App) {

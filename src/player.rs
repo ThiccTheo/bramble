@@ -1,12 +1,14 @@
 use {
     super::{
         bounding_box::BoundingBox,
+        collision,
         damage::DamageDealtEvent,
         flippable::Flippable,
         game_state::GameState,
+        gravity::Gravity,
         inventory::{Inventory, ItemDropEvent},
         mouse_position::MousePosition,
-        physics,
+        terminal_velocity::TerminalVelocity,
         tile::TILE_SIZE,
         world_generation::ENTITY_LAYER,
     },
@@ -20,9 +22,6 @@ use {
 };
 
 pub const PLAYER_SIZE: Vec2 = Vec2::new(12., 21.);
-const DEFAULT_PLAYER_MOVE_AMOUNT: f32 = 5000.;
-const DEFAULT_PLAYER_FRICTION_COEFFICIENT: f32 = 10.;
-const DEFAULT_PLAYER_JUMP_POWER: f32 = 350.;
 
 pub struct PlayerPlugin;
 
@@ -40,9 +39,7 @@ impl Plugin for PlayerPlugin {
                 drop_item,
                 update_current_hotbar_index,
                 hotbar_scrolling,
-                move_player
-                    .after(physics::zero_velocity_on_collision)
-                    .before(physics::apply_velocity),
+                move_player.after(collision::zero_velocity_on_collision),
             )
                 .in_set(OnUpdate(GameState::Playing)),
         );
@@ -77,6 +74,7 @@ pub enum PlayerControl {
 #[derive(Component, Default)]
 pub struct Player {
     pub current_hotbar_index: usize,
+    pub velocity: Vec2,
 }
 
 #[derive(Resource, Default)]
@@ -113,8 +111,6 @@ fn spawn_player(mut cmds: Commands, player_texture: Res<PlayerTexture>, assets: 
             ..default()
         },
         Flippable::default(),
-        Velocity::default(),
-        Friction::new(DEFAULT_PLAYER_FRICTION_COEFFICIENT),
         SpriteSheetBundle {
             transform: Transform::from_xyz(0., 100., ENTITY_LAYER),
             sprite: TextureAtlasSprite {
@@ -124,6 +120,10 @@ fn spawn_player(mut cmds: Commands, player_texture: Res<PlayerTexture>, assets: 
             texture_atlas: player_texture.0.clone(),
             ..default()
         },
+        Velocity::default(),
+        TerminalVelocity::from(Vec2::splat(300.)),
+        Friction::new(2.),
+        Gravity(10.),
         BoundingBox::from(PLAYER_SIZE),
         InputManagerBundle::<PlayerControl> {
             action_state: ActionState::default(),
@@ -220,29 +220,51 @@ pub fn move_player(
     mut player_qry: Query<
         (
             &mut Flippable,
-            &KinematicCharacterControllerOutput,
+            &mut KinematicCharacterController,
             &mut Velocity,
+            &TerminalVelocity,
+            &Friction,
+            &Gravity,
         ),
         With<Player>,
     >,
-    time: Res<Time>,
     action_state_qry: Query<&ActionState<PlayerControl>, With<Player>>,
+    time: Res<Time>,
 ) {
-    let Ok((mut player_flippable, player_ctrl_out, mut player_vel)) = player_qry.get_single_mut() else {return};
-    let action_state = action_state_qry.single();
     let dt = time.delta_seconds();
+    let Ok((mut player_flippable, mut player_kcc, mut player_vel, player_terminal_vel, player_friction, player_gravity)) = player_qry.get_single_mut() else {return};
+    let action_state = action_state_qry.single();
+
+    let move_amt = 200.;
+    let jump_power = 300.;
 
     if action_state.pressed(PlayerControl::MoveLeft) {
-        player_vel.linvel.x -= DEFAULT_PLAYER_MOVE_AMOUNT * dt;
+        player_vel.linvel.x -= move_amt * dt;
         player_flippable.flip_x = true;
     }
     if action_state.pressed(PlayerControl::MoveRight) {
-        player_vel.linvel.x += DEFAULT_PLAYER_MOVE_AMOUNT * dt;
+        player_vel.linvel.x += move_amt * dt;
         player_flippable.flip_x = false;
     }
-    if action_state.just_pressed(PlayerControl::Jump) && player_ctrl_out.grounded {
-        player_vel.linvel.y += DEFAULT_PLAYER_JUMP_POWER * dt;
+    if action_state.just_pressed(PlayerControl::Jump) && player_vel.linvel.y == 0. {
+        player_vel.linvel.y += jump_power;
     }
+
+    if player_vel.linvel.x.is_sign_positive() {
+        player_vel.linvel.x = f32::max(player_vel.linvel.x - player_friction.coefficient, 0.);
+    } else if player_vel.linvel.x.is_sign_negative() {
+        player_vel.linvel.x = f32::min(player_vel.linvel.x + player_friction.coefficient, 0.);
+    }
+    player_vel.linvel.x = player_vel.linvel.x.clamp(
+        -player_terminal_vel.0.linvel.x,
+        player_terminal_vel.0.linvel.x,
+    );
+    player_vel.linvel.y = f32::max(
+        player_vel.linvel.y - player_gravity.0,
+        -player_terminal_vel.0.linvel.y,
+    );
+
+    player_kcc.translation = Some(player_vel.linvel * (1. / 60.));
 }
 
 fn attack(

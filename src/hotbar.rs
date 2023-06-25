@@ -14,7 +14,7 @@ const HOTBAR_SIZE: Size = Size {
     height: Val::Px(HOTBAR_HEIGHT),
 };
 
-pub(super) struct HotbarPlugin;
+pub struct HotbarPlugin;
 
 impl Plugin for HotbarPlugin {
     fn build(&self, app: &mut App) {
@@ -25,6 +25,7 @@ impl Plugin for HotbarPlugin {
                     update_hotbar_items,
                     highlight_selected_slot,
                     click_hotbar_slot,
+                    update_item_counts,
                 )
                     .in_set(OnUpdate(GameState::Playing)),
             );
@@ -38,6 +39,9 @@ pub struct Hotbar;
 pub struct HotbarSlot {
     pub item_id: Option<Entity>,
 }
+
+#[derive(Component)]
+pub struct HotbarItemCount;
 
 #[derive(Component)]
 pub struct HotbarButton(pub usize);
@@ -79,24 +83,26 @@ fn spawn_hotbar(mut cmds: Commands, assets: Res<AssetServer>) {
                     HotbarButton(i),
                 ))
                 .with_children(|parent| {
-                    parent.spawn(TextBundle {
-                        text: Text {
-                            sections: vec![TextSection::new(
-                                format!("{i}"),
-                                TextStyle {
-                                    font: assets.load("fonts/fira_sans.ttf"),
-                                    font_size: 15.,
-                                    color: Color::BLACK,
-                                },
-                            )],
-                            alignment: TextAlignment::Left,
+                    parent.spawn((ImageBundle::default(), HotbarSlot::default()));
+
+                    parent.spawn((
+                        TextBundle {
+                            text: Text {
+                                sections: vec![TextSection::new(
+                                    "  ",
+                                    TextStyle {
+                                        font: assets.load("fonts/fira_sans.ttf"),
+                                        font_size: 15.,
+                                        color: Color::BLACK,
+                                    },
+                                )],
+                                alignment: TextAlignment::Left,
+                                ..default()
+                            },
                             ..default()
                         },
-                        ..default()
-                    });
-                })
-                .with_children(|parent| {
-                    parent.spawn((ImageBundle::default(), HotbarSlot::default()));
+                        HotbarItemCount,
+                    ));
                 });
         }
     });
@@ -158,6 +164,24 @@ fn click_hotbar_slot(
     for (interaction, hotbar_button) in interaction_qry.iter() {
         if *interaction == Interaction::Clicked {
             player.current_hotbar_index = hotbar_button.0 - 1;
+        }
+    }
+}
+
+fn update_item_counts(
+    mut item_count_qry: Query<&mut Text, With<HotbarItemCount>>,
+    player_qry: Query<&Inventory, With<Player>>,
+) {
+    let player_inventory = player_qry.single();
+
+    for (i, mut text) in item_count_qry.iter_mut().enumerate() {
+        if let Some(items) = player_inventory.item_slots[i]
+            .as_ref()
+            .and_then(|items| (items.len() > 1).then_some(items))
+        {
+            text.sections[0].value = format!("{}", items.len());
+        } else {
+            text.sections[0].value = String::from("  ");
         }
     }
 }

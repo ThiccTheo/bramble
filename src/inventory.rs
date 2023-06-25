@@ -1,8 +1,8 @@
-use bevy_rapier2d::prelude::Collider;
-
 use {
     super::{
-        bounding_box::BoundingBox, game_state::GameState, item::Item,
+        bounding_box::BoundingBox,
+        game_state::GameState,
+        item::{Item, MAX_ITEM_STACK},
         world_generation::ENTITY_LAYER,
     },
     bevy::{prelude::*, sprite::collide_aabb},
@@ -114,29 +114,30 @@ fn on_item_pickups(
         let Ok(new_item) = item_qry.get(*tmp) else { continue };
         let Ok(mut inventory) = inventory_qry.get_mut(*inventory_id) else { continue };
 
-        // Not finding proper item slot
-        let item_slot = inventory
+        let item_slot = inventory.item_slots.iter().position(|item_slot| {
+            item_slot.as_ref().is_some_and(|items| {
+                items.len() < MAX_ITEM_STACK
+                    && items.first().is_some_and(|&item_id| {
+                        item_qry
+                            .get(item_id)
+                            .is_ok_and(|item| item.can_stack && item.id == new_item.id)
+                    })
+            })
+        });
+
+        let item_slot = item_slot.or(inventory
             .item_slots
-            .iter_mut()
-            .position(|item_slot|
-                item_slot.as_ref().is_some_and(|items|
-                    items.len() < 5 && items.first().is_some_and(|&item_id|
-                        item_qry.get(item_id).is_ok_and(|item|
-                            item.can_stack && item.id == new_item.id
-                        )
-                    )
-                )
-            );
-        // works but not if full inventory
-        let item_slot = item_slot.unwrap_or(inventory.item_slots.iter().position(|item_slot| item_slot.is_none()).unwrap());
+            .iter()
+            .position(|item_slot| item_slot.is_none()));
+        let Some(item_slot) = item_slot else { continue };
 
         if let Some(Some(items)) = inventory.item_slots.get_mut(item_slot) {
             items.push(*tmp);
         } else {
             inventory.item_slots[item_slot] = Some(vec![*tmp]);
         }
-        cmds.entity(*tmp).remove::<DroppedItem>();
 
+        cmds.entity(*tmp).remove::<DroppedItem>();
         let Ok(mut visibility) = visibility_qry.get_mut(*tmp) else { continue };
         *visibility = Visibility::Hidden;
     }
