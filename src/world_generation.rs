@@ -13,9 +13,8 @@ use {
 };
 
 //  (0, 1), (1, 1)
-//  (0, 0), (1, 0)
 
-const TILE_MAP_SIZE: TilemapSize = TilemapSize { x: 64, y: 64 };
+const TILE_MAP_SIZE: TilemapSize = TilemapSize { x: 256, y: 1 };
 pub const _BACKGROUND_LAYER: f32 = 1.;
 pub const FOREGROUND_LAYER: f32 = 2.;
 pub const ENTITY_LAYER: f32 = 3.;
@@ -45,6 +44,7 @@ pub struct BackgroundTilemap;
 #[derive(Component)]
 pub struct ForegroundTilemap;
 
+//  (0, 0), (1, 0)
 #[derive(Resource)]
 pub struct PerlinMap(pub NoiseMap);
 
@@ -73,10 +73,10 @@ pub fn spawn_tilemap(mut cmds: Commands, assets: Res<AssetServer>, perlin_map: R
 
     for y in 0..TILE_MAP_SIZE.y {
         for x in 0..TILE_MAP_SIZE.x {
-            if perlin_map
-                .0
-                .get_value(x as usize, TILE_MAP_SIZE.y as usize - y as usize - 1)
-                > 0.1
+            // if perlin_map
+            //     .0
+            //     .get_value(x as usize, TILE_MAP_SIZE.y as usize - y as usize - 1)
+            //     > 0.1
             {
                 let tex_idx = TileTextureIndex(if y == TILE_MAP_SIZE.y - 1 {
                     0

@@ -39,9 +39,14 @@ impl Plugin for PlayerPlugin {
                 drop_item,
                 update_current_hotbar_index,
                 hotbar_scrolling,
-                move_player.after(collision::zero_velocity_on_collision),
             )
                 .in_set(OnUpdate(GameState::Playing)),
+        )
+        .add_system(
+            move_player
+                .after(collision::zero_velocity_on_collision)
+                .run_if(in_state(GameState::Playing))
+                .in_schedule(CoreSchedule::FixedUpdate),
         );
     }
 }
@@ -121,9 +126,9 @@ fn spawn_player(mut cmds: Commands, player_texture: Res<PlayerTexture>, assets: 
             ..default()
         },
         Velocity::default(),
-        TerminalVelocity::from(Vec2::splat(300.)),
-        Friction::new(2.),
-        Gravity(10.),
+        TerminalVelocity::from(Vec2::splat(250.)),
+        Friction::new(100.),
+        Gravity(250.),
         BoundingBox::from(PLAYER_SIZE),
         InputManagerBundle::<PlayerControl> {
             action_state: ActionState::default(),
@@ -229,42 +234,53 @@ pub fn move_player(
         With<Player>,
     >,
     action_state_qry: Query<&ActionState<PlayerControl>, With<Player>>,
-    time: Res<Time>,
+    ts: Res<FixedTime>,
 ) {
-    let dt = time.delta_seconds();
-    let Ok((mut player_flippable, mut player_kcc, mut player_vel, player_terminal_vel, player_friction, player_gravity)) = player_qry.get_single_mut() else {return};
+    let (
+        mut player_flippable,
+        mut player_kcc,
+        mut player_vel,
+        player_terminal_vel,
+        player_friction,
+        player_gravity,
+    ) = player_qry.single_mut();
+
     let action_state = action_state_qry.single();
+    let dt = ts.period.as_secs_f32();
 
-    let move_amt = 200.;
-    let jump_power = 300.;
+    let acceleration = 110.;
+    let jump_power = 100.;
 
+    // TODO: Move input to update()
     if action_state.pressed(PlayerControl::MoveLeft) {
-        player_vel.linvel.x -= move_amt * dt;
+        player_vel.linvel.x -= acceleration * dt;
         player_flippable.flip_x = true;
     }
     if action_state.pressed(PlayerControl::MoveRight) {
-        player_vel.linvel.x += move_amt * dt;
+        player_vel.linvel.x += acceleration * dt;
         player_flippable.flip_x = false;
     }
     if action_state.just_pressed(PlayerControl::Jump) && player_vel.linvel.y == 0. {
-        player_vel.linvel.y += jump_power;
+        player_vel.linvel.y = jump_power;
     }
 
     if player_vel.linvel.x.is_sign_positive() {
-        player_vel.linvel.x = f32::max(player_vel.linvel.x - player_friction.coefficient, 0.);
+        player_vel.linvel.x = f32::max(player_vel.linvel.x - player_friction.coefficient * dt, 0.);
     } else if player_vel.linvel.x.is_sign_negative() {
-        player_vel.linvel.x = f32::min(player_vel.linvel.x + player_friction.coefficient, 0.);
+        player_vel.linvel.x = f32::min(player_vel.linvel.x + player_friction.coefficient * dt, 0.);
     }
+
     player_vel.linvel.x = player_vel.linvel.x.clamp(
         -player_terminal_vel.0.linvel.x,
         player_terminal_vel.0.linvel.x,
     );
+
     player_vel.linvel.y = f32::max(
-        player_vel.linvel.y - player_gravity.0,
+        player_vel.linvel.y - player_gravity.0 * dt,
         -player_terminal_vel.0.linvel.y,
     );
 
-    player_kcc.translation = Some(player_vel.linvel * (1. / 60.));
+    player_kcc.translation = Some(player_vel.linvel);
 }
 
 fn attack(

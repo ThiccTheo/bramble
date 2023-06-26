@@ -1,3 +1,5 @@
+use bevy::window::PresentMode;
+
 mod bounding_box;
 mod collision;
 mod combat;
@@ -20,7 +22,7 @@ mod ui_root;
 mod world_generation;
 
 use {
-    bevy::{prelude::*, window::WindowResolution},
+    bevy::{prelude::*, window::WindowResolution, /*diagnostic::{LogDiagnosticsPlugin, FrameTimeDiagnosticsPlugin}*/},
     bevy_ecs_tilemap::prelude::*,
     bevy_inspector_egui::quick::WorldInspectorPlugin,
     bevy_rapier2d::prelude::*,
@@ -52,12 +54,15 @@ fn main() {
                     primary_window: Some(Window {
                         title: String::from("Bramble"),
                         resolution: WindowResolution::new(1280., 720.),
+                        present_mode: PresentMode::AutoVsync,
                         ..default()
                     }),
                     ..default()
                 })
                 .set(ImagePlugin::default_nearest()),
         )
+        // .add_plugin(LogDiagnosticsPlugin::default())
+        // .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_plugin(InputManagerPlugin::<PlayerControl>::default())
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(WorldInspectorPlugin::default())
