@@ -1,15 +1,14 @@
 use {super::game_state::GameState, bevy::prelude::*, bevy_rapier2d::prelude::*};
 
-pub struct CollisionPlugin;
+pub struct CollisionsPlugin;
 
-impl Plugin for CollisionPlugin {
+impl Plugin for CollisionsPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(FixedTime::new_from_secs(1. / 60.))
-            .add_system(
-                zero_velocity_on_collision
-                    .run_if(in_state(GameState::Playing))
-                    .in_schedule(CoreSchedule::FixedUpdate),
-            );
+        app.add_system(
+            zero_velocity_on_collision
+                .run_if(in_state(GameState::Playing))
+                .in_schedule(CoreSchedule::FixedUpdate),
+        );
     }
 }
 

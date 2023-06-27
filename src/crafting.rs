@@ -1,4 +1,4 @@
-use {bevy::prelude::*, maplit::hashmap, regex::Regex, std::collections::HashMap};
+use {super::item::ItemType, bevy::prelude::*, regex::Regex};
 
 pub struct CraftingPlugin;
 
@@ -6,30 +6,21 @@ impl Plugin for CraftingPlugin {
     fn build(&self, app: &mut App) {}
 }
 
-// #[derive(PartialEq, Eq, Hash)]
-// pub struct CraftingRecipe {
-//     pattern: Regex,
-// }
+pub type CraftingRecipe = Regex;
 
-// impl CraftingRecipe {
-//     pub fn new(pattern: &str) -> Self {
-//         Self {
-//             pattern: Regex::new(pattern).unwrap(),
-//         }
-//     }
-// }
+#[derive(Resource)]
+pub struct CraftingRecipes {
+    pub recipes: Vec<(CraftingRecipe, (ItemType, usize))>,
+}
 
-// #[derive(Resource)]
-// pub struct CraftingTable {
-//     pub recipes: HashMap<CraftingRecipe, &'static str>,
-// }
+impl Default for CraftingRecipes {
+    fn default() -> Self {
+        let recipes = vec![(
+            CraftingRecipe::new(format!("(Empty)*({:?})(Empty)*", ItemType::WoodLog).as_str())
+                .unwrap(),
+            (ItemType::WoodPlank, 4),
+        )];
 
-// impl Default for CraftingTable {
-//     fn default() -> Self {
-//         Self {
-//             recipes: hashmap! {
-//                 CraftingRecipe::new("Test") => "Fuck",
-//             },
-//         }
-//     }
-// }
+        Self { recipes }
+    }
+}

@@ -8,8 +8,16 @@ pub struct Item {
     pub id: ItemType,
 }
 
-#[derive(Default, PartialEq, Eq)]
+#[allow(unused)]
+#[derive(Default, PartialEq, Eq, Debug)]
 pub enum ItemType {
     #[default]
     Null,
+    Stick,
+    WoodPlank,
+    WoodLog,
+    WoodPickaxe,
+    WoodSword,
+    WoodAxe,
+    WoodHammer,
 }

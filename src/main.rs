@@ -1,11 +1,10 @@
-use bevy::window::PresentMode;
-
 mod bounding_box;
-mod collision;
+mod collisions;
 mod combat;
 mod crafting;
 mod damage;
 mod flippable;
+mod forces;
 mod game_state;
 mod gravity;
 mod health;
@@ -22,11 +21,14 @@ mod ui_root;
 mod world_generation;
 
 use {
-    bevy::{prelude::*, window::WindowResolution, /*diagnostic::{LogDiagnosticsPlugin, FrameTimeDiagnosticsPlugin}*/},
+    bevy::{
+        prelude::*,
+        window::{PresentMode, WindowResolution}, /*diagnostic::{LogDiagnosticsPlugin, FrameTimeDiagnosticsPlugin}*/
+    },
     bevy_ecs_tilemap::prelude::*,
     bevy_inspector_egui::quick::WorldInspectorPlugin,
     bevy_rapier2d::prelude::*,
-    collision::CollisionPlugin,
+    collisions::CollisionsPlugin,
     combat::CombatPlugin,
     crafting::CraftingPlugin,
     damage::DamagePlugin,
@@ -48,13 +50,14 @@ fn main() {
     App::new()
         .add_state::<GameState>()
         .register_type::<TextureAtlasSprite>()
+        .insert_resource(FixedTime::new_from_secs(1. / 60.))
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         title: String::from("Bramble"),
                         resolution: WindowResolution::new(1280., 720.),
-                        present_mode: PresentMode::AutoVsync,
+                        present_mode: PresentMode::AutoNoVsync,
                         ..default()
                     }),
                     ..default()
@@ -77,7 +80,7 @@ fn main() {
         .add_plugin(InventoryPlugin)
         .add_plugin(MainCameraPlugin)
         .add_plugin(MousePositionPlugin)
-        .add_plugin(CollisionPlugin)
+        .add_plugin(CollisionsPlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(TilePlugin)
         .add_plugin(UiRootPlugin)

@@ -1,7 +1,7 @@
 use {
     super::{
         bounding_box::BoundingBox,
-        collision,
+        collisions,
         damage::DamageDealtEvent,
         flippable::Flippable,
         game_state::GameState,
@@ -39,12 +39,13 @@ impl Plugin for PlayerPlugin {
                 drop_item,
                 update_current_hotbar_index,
                 hotbar_scrolling,
+                update_player_input,
             )
                 .in_set(OnUpdate(GameState::Playing)),
         )
         .add_system(
             move_player
-                .after(collision::zero_velocity_on_collision)
+                .after(collisions::zero_velocity_on_collision)
                 .run_if(in_state(GameState::Playing))
                 .in_schedule(CoreSchedule::FixedUpdate),
         );
@@ -79,7 +80,9 @@ pub enum PlayerControl {
 #[derive(Component, Default)]
 pub struct Player {
     pub current_hotbar_index: usize,
-    pub velocity: Vec2,
+    left_pressed: bool,
+    right_pressed: bool,
+    jump_just_pressed: bool,
 }
 
 #[derive(Resource, Default)]
@@ -115,6 +118,7 @@ fn spawn_player(mut cmds: Commands, player_texture: Res<PlayerTexture>, assets: 
             snap_to_ground: Some(CharacterLength::Absolute(TILE_SIZE.y)),
             ..default()
         },
+        KinematicCharacterControllerOutput::default(),
         Flippable::default(),
         SpriteSheetBundle {
             transform: Transform::from_xyz(0., 100., ENTITY_LAYER),
@@ -221,22 +225,28 @@ fn spawn_player(mut cmds: Commands, player_texture: Res<PlayerTexture>, assets: 
     });
 }
 
+fn update_player_input(mut player_qry: Query<(&mut Player, &ActionState<PlayerControl>)>) {
+    let (mut player, action_state) = player_qry.single_mut();
+
+    player.left_pressed = action_state.pressed(PlayerControl::MoveLeft);
+    player.right_pressed = action_state.pressed(PlayerControl::MoveRight);
+    player.jump_just_pressed = action_state.just_pressed(PlayerControl::Jump);
+}
+
 pub fn move_player(
-    mut player_qry: Query<
-        (
-            &mut Flippable,
-            &mut KinematicCharacterController,
-            &mut Velocity,
-            &TerminalVelocity,
-            &Friction,
-            &Gravity,
-        ),
-        With<Player>,
-    >,
-    action_state_qry: Query<&ActionState<PlayerControl>, With<Player>>,
+    mut player_qry: Query<(
+        &Player,
+        &mut Flippable,
+        &mut KinematicCharacterController,
+        &mut Velocity,
+        &TerminalVelocity,
+        &Friction,
+        &Gravity,
+    )>,
     ts: Res<FixedTime>,
 ) {
     let (
+        player,
         mut player_flippable,
         mut player_kcc,
         mut player_vel,
@@ -245,22 +255,20 @@ pub fn move_player(
         player_gravity,
     ) = player_qry.single_mut();
 
-    let action_state = action_state_qry.single();
     let dt = ts.period.as_secs_f32();
 
     let acceleration = 110.;
     let jump_power = 100.;
 
-    // TODO: Move input to update()
-    if action_state.pressed(PlayerControl::MoveLeft) {
+    if player.left_pressed {
         player_vel.linvel.x -= acceleration * dt;
         player_flippable.flip_x = true;
     }
-    if action_state.pressed(PlayerControl::MoveRight) {
+    if player.right_pressed {
         player_vel.linvel.x += acceleration * dt;
         player_flippable.flip_x = false;
     }
-    if action_state.just_pressed(PlayerControl::Jump) && player_vel.linvel.y == 0. {
+    if player.jump_just_pressed && player_vel.linvel.y == 0. {
         player_vel.linvel.y = jump_power;
     }
 
