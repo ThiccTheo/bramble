@@ -1,16 +1,16 @@
 use {
-    super::{
-        bounding_box::BoundingBox,
-        collisions,
-        damage::DamageDealtEvent,
-        flippable::Flippable,
-        game_state::GameState,
-        gravity::Gravity,
-        inventory::{Inventory, ItemDropEvent},
-        mouse_position::MousePosition,
-        terminal_velocity::TerminalVelocity,
-        tile::TILE_SIZE,
-        world_generation::ENTITY_LAYER,
+    super::{tile::TILE_SIZE, world_generation::ENTITY_LAYER},
+    crate::{
+        core::{
+            animation::Flippable,
+            mouse_position::MousePosition,
+            physics::{self, BoundingBox, Gravity, TerminalVelocity},
+        },
+        logic::{
+            damage::DamageDealtEvent,
+            inventory::{Inventory, ItemDropEvent},
+        },
+        states::game_state::GameState,
     },
     bevy::{
         input::mouse::{MouseScrollUnit, MouseWheel},
@@ -23,7 +23,7 @@ use {
 
 pub const PLAYER_SIZE: Vec2 = Vec2::new(12., 21.);
 
-pub struct PlayerPlugin;
+pub(super) struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
@@ -45,7 +45,7 @@ impl Plugin for PlayerPlugin {
         )
         .add_system(
             move_player
-                .after(collisions::zero_velocity_on_collision)
+                .after(physics::zero_velocity_on_collision)
                 .run_if(in_state(GameState::Playing))
                 .in_schedule(CoreSchedule::FixedUpdate),
         );

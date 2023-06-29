@@ -1,3 +1,5 @@
+use bevy::prelude::*;
+
 #[macro_export]
 macro_rules! rgb_u8 {
     ($r:expr, $g:expr, $b:expr) => {
@@ -17,4 +19,12 @@ macro_rules! rgb_u8 {
             alpha: $a as f32 / 255.,
         }
     };
+}
+
+pub(super) struct GraphicsPlugin;
+
+impl Plugin for GraphicsPlugin {
+    fn build(&self, app: &mut App) {
+        app.register_type::<TextureAtlasSprite>();
+    }
 }

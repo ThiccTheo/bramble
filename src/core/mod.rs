@@ -1,23 +1,20 @@
-pub mod bounding_box;
-pub mod collisions;
-pub mod flippable;
-pub mod forces;
-pub mod gravity;
+pub mod animation;
+pub mod graphics;
 pub mod mouse_position;
-pub mod rgb_u8;
-pub mod terminal_velocity;
+pub mod physics;
 
 use {
     crate::world::player::PlayerControl,
+    animation::AnimationPlugin,
     bevy::{
         app::PluginGroupBuilder,
         prelude::*, /*, diagnostic::{LogDiagnosticsPlugin, FrameTimeDiagnosticsPlugin}*/
     },
     bevy_rapier2d::prelude::*,
-    collisions::CollisionsPlugin,
-    forces::ForcesPlugin,
+    graphics::GraphicsPlugin,
     leafwing_input_manager::prelude::*,
     mouse_position::MousePositionPlugin,
+    physics::PhysicsPlugin,
 };
 
 pub struct CorePlugins;
@@ -30,8 +27,9 @@ impl PluginGroup for CorePlugins {
             .add(InputManagerPlugin::<PlayerControl>::default())
             .add(RapierPhysicsPlugin::<NoUserData>::default())
             .add(RapierDebugRenderPlugin::default())
-            .add(CollisionsPlugin)
-            .add(ForcesPlugin)
+            .add(PhysicsPlugin)
             .add(MousePositionPlugin)
+            .add(AnimationPlugin)
+            .add(GraphicsPlugin)
     }
 }

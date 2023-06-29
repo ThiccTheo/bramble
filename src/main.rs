@@ -11,16 +11,13 @@ use {
         window::{PresentMode, WindowResolution},
     },
     logic::LogicPlugins,
-    states::{game_state::GameState, StatesPlugins},
+    states::StatesPlugins,
     ui::UiPlugins,
     world::WorldPlugins,
 };
 
 fn main() {
     App::new()
-        .add_state::<GameState>()
-        .register_type::<TextureAtlasSprite>()
-        .insert_resource(FixedTime::new_from_secs(1. / 60.))
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {

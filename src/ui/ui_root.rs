@@ -1,6 +1,6 @@
-use {super::game_state::GameState, bevy::prelude::*};
+use {crate::states::game_state::GameState, bevy::prelude::*};
 
-pub struct UiRootPlugin;
+pub(super) struct UiRootPlugin;
 
 impl Plugin for UiRootPlugin {
     fn build(&self, app: &mut App) {

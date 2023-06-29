@@ -1,5 +1,7 @@
 use {
-    crate::{game_state::GameState, inventory::Inventory, player::Player, rgb_u8},
+    crate::{
+        logic::inventory::Inventory, rgb_u8, states::game_state::GameState, world::player::Player,
+    },
     bevy::prelude::*,
 };
 
@@ -14,7 +16,7 @@ const HOTBAR_SIZE: Size = Size {
     height: Val::Px(HOTBAR_HEIGHT),
 };
 
-pub struct HotbarPlugin;
+pub(super) struct HotbarPlugin;
 
 impl Plugin for HotbarPlugin {
     fn build(&self, app: &mut App) {

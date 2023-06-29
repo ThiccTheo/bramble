@@ -1,15 +1,14 @@
 use {
-    super::{
-        bounding_box::BoundingBox,
-        game_state::GameState,
-        item::{Item, MAX_ITEM_STACK},
-        world_generation::ENTITY_LAYER,
+    super::item::{Item, MAX_ITEM_STACK},
+    crate::{
+        core::physics::BoundingBox, states::game_state::GameState,
+        world::world_generation::ENTITY_LAYER,
     },
     bevy::{prelude::*, sprite::collide_aabb},
     std::time::Duration,
 };
 
-pub struct InventoryPlugin;
+pub(super) struct InventoryPlugin;
 
 impl Plugin for InventoryPlugin {
     fn build(&self, app: &mut App) {

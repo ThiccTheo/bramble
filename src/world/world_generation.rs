@@ -1,8 +1,6 @@
 use {
-    super::{
-        game_state::GameState,
-        tile::{self, TILE_SIZE},
-    },
+    super::tile::{self, TILE_SIZE},
+    crate::states::game_state::GameState,
     bevy::prelude::*,
     bevy_ecs_tilemap::prelude::*,
     noise::{
@@ -19,7 +17,7 @@ pub const _BACKGROUND_LAYER: f32 = 1.;
 pub const FOREGROUND_LAYER: f32 = 2.;
 pub const ENTITY_LAYER: f32 = 3.;
 
-pub struct WorldGenerationPlugin;
+pub(super) struct WorldGenerationPlugin;
 
 impl Plugin for WorldGenerationPlugin {
     fn build(&self, app: &mut App) {

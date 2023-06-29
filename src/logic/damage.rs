@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-pub struct DamagePlugin;
+pub(super) struct DamagePlugin;
 
 impl Plugin for DamagePlugin {
     fn build(&self, app: &mut App) {

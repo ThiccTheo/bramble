@@ -1,11 +1,9 @@
 use {
-    super::{
-        bounding_box::BoundingBox,
-        game_state::GameState,
-        health::Health,
-        inventory::Inventory,
-        item::Item,
-        world_generation::{ForegroundTilemap, FOREGROUND_LAYER},
+    super::world_generation::{ForegroundTilemap, FOREGROUND_LAYER},
+    crate::{
+        core::physics::BoundingBox,
+        logic::{health::Health, inventory::Inventory, item::Item},
+        states::game_state::GameState,
     },
     bevy::prelude::*,
     bevy_ecs_tilemap::prelude::*,
@@ -14,7 +12,7 @@ use {
 
 pub const TILE_SIZE: TilemapTileSize = TilemapTileSize { x: 16., y: 16. };
 
-pub struct TilePlugin;
+pub(super) struct TilePlugin;
 
 impl Plugin for TilePlugin {
     fn build(&self, app: &mut App) {

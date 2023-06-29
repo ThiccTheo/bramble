@@ -1,6 +1,6 @@
-use {super::game_state::GameState, bevy::prelude::*};
+use {crate::states::game_state::GameState, bevy::prelude::*};
 
-pub struct HealthPlugin;
+pub(super) struct HealthPlugin;
 
 impl Plugin for HealthPlugin {
     fn build(&self, app: &mut App) {

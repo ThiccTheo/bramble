@@ -1,6 +1,6 @@
 use {super::item::ItemType, bevy::prelude::*, regex::Regex};
 
-pub struct CraftingPlugin;
+pub(super) struct CraftingPlugin;
 
 impl Plugin for CraftingPlugin {
     fn build(&self, app: &mut App) {}

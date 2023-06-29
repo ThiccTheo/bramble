@@ -1,14 +1,14 @@
 use {
     super::{
         damage::DamageDealtEvent,
-        game_state::GameState,
         health::Health,
         inventory::{Inventory, ItemDropEvent},
     },
+    crate::states::game_state::GameState,
     bevy::prelude::*,
 };
 
-pub struct CombatPlugin;
+pub(super) struct CombatPlugin;
 
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {

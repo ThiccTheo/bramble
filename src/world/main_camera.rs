@@ -1,8 +1,6 @@
 use {
-    super::{
-        game_state::GameState,
-        player::{self, Player, PlayerControl},
-    },
+    super::player::{self, Player, PlayerControl},
+    crate::states::game_state::GameState,
     bevy::prelude::*,
     leafwing_input_manager::prelude::*,
 };
@@ -15,7 +13,7 @@ const CAMERA_ZOOM_IN_LIMIT: f32 = DEFAULT_CAMERA_ZOOM - CAMERA_ZOOM_OFFSET;
 const CAMERA_ZOOM_OUT_LIMIT: f32 = DEFAULT_CAMERA_ZOOM + CAMERA_ZOOM_OFFSET;
 const DEFAULT_CAMERA_Z: f32 = 999.9;
 
-pub struct MainCameraPlugin;
+pub(super) struct MainCameraPlugin;
 
 impl Plugin for MainCameraPlugin {
     fn build(&self, app: &mut App) {
