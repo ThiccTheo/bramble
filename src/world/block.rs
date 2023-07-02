@@ -1,8 +1,10 @@
 use {
-    super::world_generation::{ForegroundTilemap, FOREGROUND_LAYER},
     crate::{
         core::physics::BoundingBox,
-        logic::{health::Health, inventory::Inventory, item::Item},
+        logic::{
+            combat::Health,
+            inventory::{Inventory, InventoryItem},
+        },
         states::game_state::GameState,
     },
     bevy::prelude::*,
@@ -10,26 +12,30 @@ use {
     bevy_rapier2d::prelude::*,
 };
 
-pub const TILE_SIZE: TilemapTileSize = TilemapTileSize { x: 16., y: 16. };
+pub const BLOCK_SIZE: TilemapTileSize = TilemapTileSize { x: 16., y: 16. };
+pub const BLOCK_LAYER: f32 = 2.;
 
-pub(super) struct TilePlugin;
+pub(super) struct BlockPlugin;
 
-impl Plugin for TilePlugin {
+impl Plugin for BlockPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<TileBreakEvent>()
-            .add_system(add_colliders_to_tiles.in_set(OnUpdate(GameState::Playing)))
+            .add_system(add_colliders_to_blocks.in_set(OnUpdate(GameState::Playing)))
             .add_system(on_tile_break.in_set(OnUpdate(GameState::Playing)));
     }
 }
 
 #[derive(Component)]
-pub struct Tile;
+pub struct Block;
+
+#[derive(Component)]
+pub struct ForegroundTilemap;
 
 pub struct TileBreakEvent {
     tile_position: TilePos,
 }
 
-pub fn spawn_tile(
+pub fn spawn_block(
     cmds: &mut Commands,
     pos: TilePos,
     tex_idx: TileTextureIndex,
@@ -39,10 +45,7 @@ pub fn spawn_tile(
 ) {
     let item_id = cmds
         .spawn((
-            Item {
-                can_stack: true,
-                ..default()
-            },
+            InventoryItem::default(),
             SpriteBundle {
                 sprite: Sprite {
                     custom_size: Some(Vec2::splat(8.)),
@@ -55,9 +58,9 @@ pub fn spawn_tile(
         ))
         .id();
 
-    let tile_id = cmds
+    let block_id = cmds
         .spawn((
-            Tile,
+            Block,
             TileBundle {
                 position: pos,
                 texture_index: tex_idx,
@@ -65,7 +68,7 @@ pub fn spawn_tile(
                 ..default()
             },
             Health(100),
-            BoundingBox::new(TILE_SIZE.x, TILE_SIZE.y),
+            BoundingBox::new(BLOCK_SIZE.x, BLOCK_SIZE.y),
             Inventory {
                 keep_items: false,
                 item_slots: vec![Some(vec![item_id])],
@@ -74,7 +77,7 @@ pub fn spawn_tile(
         ))
         .id();
 
-    fg_tile_storage.set(&pos, tile_id);
+    fg_tile_storage.set(&pos, block_id);
 }
 
 fn on_tile_break(
@@ -91,22 +94,22 @@ fn on_tile_break(
     }
 }
 
-fn add_colliders_to_tiles(
+fn add_colliders_to_blocks(
     mut cmds: Commands,
     fg_tilemap_qry: Query<(&TileStorage, &Transform), With<ForegroundTilemap>>,
-    tile_pos_qry: Query<&TilePos, (With<Tile>, Without<Collider>)>,
+    block_qry: Query<&TilePos, (With<Block>, Without<Collider>)>,
 ) {
     let (fg_tile_storage, &fg_tilemap_transform) = fg_tilemap_qry.single();
 
     for &tile_id in fg_tile_storage.iter().flatten() {
-        let Ok(tile_pos) = tile_pos_qry.get(tile_id) else { continue };
-        let Vec2 { x, y } = tile_pos.center_in_world(&TILE_SIZE.into(), &TilemapType::Square);
+        let Ok(tile_pos) = block_qry.get(tile_id) else { continue };
+        let Vec2 { x, y } = tile_pos.center_in_world(&BLOCK_SIZE.into(), &TilemapType::Square);
 
         cmds.entity(tile_id).insert((
             TransformBundle::from_transform(
-                fg_tilemap_transform * Transform::from_xyz(x, y, FOREGROUND_LAYER),
+                fg_tilemap_transform * Transform::from_xyz(x, y, BLOCK_LAYER),
             ),
-            Collider::cuboid(TILE_SIZE.x / 2., TILE_SIZE.y / 2.),
+            Collider::cuboid(BLOCK_SIZE.x / 2., BLOCK_SIZE.y / 2.),
         ));
     }
 }

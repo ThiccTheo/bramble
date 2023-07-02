@@ -1,5 +1,4 @@
 use {
-    super::item::{Item, MAX_ITEM_STACK},
     crate::{
         core::physics::BoundingBox, states::game_state::GameState,
         world::world_generation::ENTITY_LAYER,
@@ -7,6 +6,8 @@ use {
     bevy::{prelude::*, sprite::collide_aabb},
     std::time::Duration,
 };
+
+const MAX_ITEM_STACK: usize = 64;
 
 pub(super) struct InventoryPlugin;
 
@@ -31,6 +32,20 @@ pub struct Inventory {
     pub item_slots: Vec<Option<Vec<Entity>>>,
     pub item_slot_count: usize,
     pub keep_items: bool,
+}
+
+#[derive(Component, Default, Eq, PartialEq)]
+pub enum InventoryItem {
+    #[default]
+    Temporary,
+}
+
+impl InventoryItem {
+    pub fn is_stackable(&self) -> bool {
+        match *self {
+            InventoryItem::Temporary => true,
+        }
+    }
 }
 
 #[derive(Component)]
@@ -66,7 +81,10 @@ fn on_item_drops(
     mut cmds: Commands,
     mut item_drop_evr: EventReader<ItemDropEvent>,
     mut inventory_qry: Query<(&mut Inventory, &mut Transform)>,
-    mut item_qry: Query<(&mut Transform, &mut Visibility), (With<Item>, Without<Inventory>)>,
+    mut item_qry: Query<
+        (&mut Transform, &mut Visibility),
+        (With<InventoryItem>, Without<Inventory>),
+    >,
 ) {
     for ItemDropEvent {
         inventory_id,
@@ -103,7 +121,7 @@ fn on_item_pickups(
     mut item_pickup_evr: EventReader<ItemPickupEvent>,
     mut inventory_qry: Query<&mut Inventory>,
     mut visibility_qry: Query<&mut Visibility>,
-    item_qry: Query<&Item>,
+    item_qry: Query<&InventoryItem>,
 ) {
     for ItemPickupEvent {
         item_id: tmp,
@@ -119,7 +137,7 @@ fn on_item_pickups(
                     && items.first().is_some_and(|&item_id| {
                         item_qry
                             .get(item_id)
-                            .is_ok_and(|item| item.can_stack && item.id == new_item.id)
+                            .is_ok_and(|item| item.is_stackable() && item == new_item)
                     })
             })
         });

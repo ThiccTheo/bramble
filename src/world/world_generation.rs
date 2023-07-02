@@ -1,5 +1,5 @@
 use {
-    super::tile::{self, TILE_SIZE},
+    super::block::{self, ForegroundTilemap, BLOCK_LAYER, BLOCK_SIZE},
     crate::states::game_state::GameState,
     bevy::prelude::*,
     bevy_ecs_tilemap::prelude::*,
@@ -10,11 +10,7 @@ use {
     rand::Rng,
 };
 
-//  (0, 1), (1, 1)
-
 const TILE_MAP_SIZE: TilemapSize = TilemapSize { x: 256, y: 1 };
-pub const _BACKGROUND_LAYER: f32 = 1.;
-pub const FOREGROUND_LAYER: f32 = 2.;
 pub const ENTITY_LAYER: f32 = 3.;
 
 pub(super) struct WorldGenerationPlugin;
@@ -36,13 +32,6 @@ impl Plugin for WorldGenerationPlugin {
     }
 }
 
-#[derive(Component)]
-pub struct BackgroundTilemap;
-
-#[derive(Component)]
-pub struct ForegroundTilemap;
-
-//  (0, 0), (1, 0)
 #[derive(Resource)]
 pub struct PerlinMap(pub NoiseMap);
 
@@ -84,7 +73,7 @@ pub fn spawn_tilemap(mut cmds: Commands, assets: Res<AssetServer>, perlin_map: R
                     2
                 });
 
-                tile::spawn_tile(
+                block::spawn_block(
                     &mut cmds,
                     TilePos { x, y },
                     tex_idx,
@@ -96,13 +85,13 @@ pub fn spawn_tilemap(mut cmds: Commands, assets: Res<AssetServer>, perlin_map: R
         }
     }
     let map_type = TilemapType::default();
-    let grid_size = TILE_SIZE.into();
+    let grid_size = BLOCK_SIZE.into();
 
     cmds.entity(tilemap_id).insert((
         TilemapBundle {
             grid_size,
             size: TILE_MAP_SIZE,
-            tile_size: TILE_SIZE,
+            tile_size: BLOCK_SIZE,
             map_type,
             storage: tile_storage,
             texture: TilemapTexture::Single(tilemap_tex),
@@ -110,7 +99,7 @@ pub fn spawn_tilemap(mut cmds: Commands, assets: Res<AssetServer>, perlin_map: R
                 &TILE_MAP_SIZE,
                 &grid_size,
                 &map_type,
-                FOREGROUND_LAYER,
+                BLOCK_LAYER,
             ),
             ..default()
         },

@@ -1,5 +1,5 @@
 use {
-    super::{tile::TILE_SIZE, world_generation::ENTITY_LAYER},
+    super::{block::BLOCK_SIZE, world_generation::ENTITY_LAYER},
     crate::{
         core::{
             animation::Flippable,
@@ -7,7 +7,7 @@ use {
             physics::{self, BoundingBox, Gravity, TerminalVelocity},
         },
         logic::{
-            damage::DamageDealtEvent,
+            combat::DamageDealtEvent,
             inventory::{Inventory, ItemDropEvent},
         },
         states::game_state::GameState,
@@ -39,7 +39,6 @@ impl Plugin for PlayerPlugin {
                 drop_item,
                 update_current_hotbar_index,
                 hotbar_scrolling,
-                update_player_input,
             )
                 .in_set(OnUpdate(GameState::Playing)),
         )
@@ -80,9 +79,6 @@ pub enum PlayerControl {
 #[derive(Component, Default)]
 pub struct Player {
     pub current_hotbar_index: usize,
-    left_pressed: bool,
-    right_pressed: bool,
-    jump_just_pressed: bool,
 }
 
 #[derive(Resource, Default)]
@@ -111,11 +107,11 @@ fn spawn_player(mut cmds: Commands, player_texture: Res<PlayerTexture>, assets: 
         Collider::cuboid(PLAYER_SIZE.x / 2., PLAYER_SIZE.y / 2.),
         KinematicCharacterController {
             autostep: Some(CharacterAutostep {
-                max_height: CharacterLength::Absolute(TILE_SIZE.y + 1.),
-                min_width: CharacterLength::Absolute(TILE_SIZE.x - 1.),
+                max_height: CharacterLength::Absolute(BLOCK_SIZE.y + 1.),
+                min_width: CharacterLength::Absolute(BLOCK_SIZE.x - 1.),
                 ..default()
             }),
-            snap_to_ground: Some(CharacterLength::Absolute(TILE_SIZE.y)),
+            snap_to_ground: Some(CharacterLength::Absolute(BLOCK_SIZE.y)),
             ..default()
         },
         KinematicCharacterControllerOutput::default(),
@@ -130,9 +126,9 @@ fn spawn_player(mut cmds: Commands, player_texture: Res<PlayerTexture>, assets: 
             ..default()
         },
         Velocity::default(),
-        TerminalVelocity::from(Vec2::splat(250.)),
+        TerminalVelocity::from(Vec2::splat(100.)),
         Friction::new(100.),
-        Gravity(250.),
+        Gravity(100.),
         BoundingBox::from(PLAYER_SIZE),
         InputManagerBundle::<PlayerControl> {
             action_state: ActionState::default(),
@@ -225,28 +221,23 @@ fn spawn_player(mut cmds: Commands, player_texture: Res<PlayerTexture>, assets: 
     });
 }
 
-fn update_player_input(mut player_qry: Query<(&mut Player, &ActionState<PlayerControl>)>) {
-    let (mut player, action_state) = player_qry.single_mut();
-
-    player.left_pressed = action_state.pressed(PlayerControl::MoveLeft);
-    player.right_pressed = action_state.pressed(PlayerControl::MoveRight);
-    player.jump_just_pressed = action_state.just_pressed(PlayerControl::Jump);
-}
-
 pub fn move_player(
-    mut player_qry: Query<(
-        &Player,
-        &mut Flippable,
-        &mut KinematicCharacterController,
-        &mut Velocity,
-        &TerminalVelocity,
-        &Friction,
-        &Gravity,
-    )>,
+    mut player_qry: Query<
+        (
+            &ActionState<PlayerControl>,
+            &mut Flippable,
+            &mut KinematicCharacterController,
+            &mut Velocity,
+            &TerminalVelocity,
+            &Friction,
+            &Gravity,
+        ),
+        With<Player>,
+    >,
     ts: Res<FixedTime>,
 ) {
     let (
-        player,
+        action_state,
         mut player_flippable,
         mut player_kcc,
         mut player_vel,
@@ -258,17 +249,17 @@ pub fn move_player(
     let dt = ts.period.as_secs_f32();
 
     let acceleration = 110.;
-    let jump_power = 100.;
+    let jump_power = 30.;
 
-    if player.left_pressed {
+    if action_state.pressed(PlayerControl::MoveLeft) {
         player_vel.linvel.x -= acceleration * dt;
         player_flippable.flip_x = true;
     }
-    if player.right_pressed {
+    if action_state.pressed(PlayerControl::MoveRight) {
         player_vel.linvel.x += acceleration * dt;
         player_flippable.flip_x = false;
     }
-    if player.jump_just_pressed && player_vel.linvel.y == 0. {
+    if action_state.just_pressed(PlayerControl::Jump) && player_vel.linvel.y == 0. {
         player_vel.linvel.y = jump_power;
     }
 
@@ -312,7 +303,7 @@ fn attack(
                 mouse_pos.0.extend(tile_transform.translation.z),
                 Vec2::ONE,
                 tile_transform.translation,
-                TILE_SIZE.into(),
+                BLOCK_SIZE.into(),
             )
             .is_some()
             {

@@ -1,4 +1,4 @@
-use {super::item::ItemType, bevy::prelude::*, regex::Regex};
+use {super::inventory::InventoryItem, bevy::prelude::*, regex::Regex};
 
 pub(super) struct CraftingPlugin;
 
@@ -10,16 +10,16 @@ pub type CraftingRecipe = Regex;
 
 #[derive(Resource)]
 pub struct CraftingRecipes {
-    pub recipes: Vec<(CraftingRecipe, (ItemType, usize))>,
+    pub recipes: Vec<(CraftingRecipe, (InventoryItem, usize))>,
 }
 
 impl Default for CraftingRecipes {
     fn default() -> Self {
-        let recipes = vec![(
-            CraftingRecipe::new(format!("(Empty)*({:?})(Empty)*", ItemType::WoodLog).as_str())
+        let recipes = vec![/*(
+            CraftingRecipe::new(format!("(Empty)*({:?})(Empty)*", InventoryItem::WoodLog).as_str())
                 .unwrap(),
             (ItemType::WoodPlank, 4),
-        )];
+        )*/];
 
         Self { recipes }
     }

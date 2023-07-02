@@ -1,9 +1,5 @@
 use {
-    super::{
-        damage::DamageDealtEvent,
-        health::Health,
-        inventory::{Inventory, ItemDropEvent},
-    },
+    super::inventory::{Inventory, ItemDropEvent},
     crate::states::game_state::GameState,
     bevy::prelude::*,
 };
@@ -12,8 +8,21 @@ pub(super) struct CombatPlugin;
 
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(on_damage_dealt.in_set(OnUpdate(GameState::Playing)));
+        app.add_event::<DamageDealtEvent>()
+            .add_system(on_damage_dealt.in_set(OnUpdate(GameState::Playing)))
+            .add_system(remove_dead_entities.in_set(OnUpdate(GameState::Playing)));
     }
+}
+
+#[derive(Component)]
+pub struct Health(pub i32);
+
+#[derive(Component)]
+pub struct Damage(pub i32);
+
+pub struct DamageDealtEvent {
+    pub damage_dealt: i32,
+    pub target_id: Entity,
 }
 
 fn on_damage_dealt(
@@ -45,5 +54,15 @@ fn on_damage_dealt(
                 }
             }
         }
+    }
+}
+
+fn remove_dead_entities(mut cmds: Commands, hp_qry: Query<(Entity, &Health)>) {
+    for id in hp_qry
+        .iter()
+        .filter(|(_, hp)| !hp.0.is_positive())
+        .map(|(id, _)| id)
+    {
+        cmds.entity(id).despawn_recursive();
     }
 }

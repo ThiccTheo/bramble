@@ -1,15 +1,16 @@
+pub mod block;
 pub mod main_camera;
 pub mod player;
-pub mod tile;
+pub mod wall;
 pub mod world_generation;
 
 use {
     bevy::{app::PluginGroupBuilder, prelude::*},
     bevy_ecs_tilemap::prelude::*,
     bevy_inspector_egui::quick::WorldInspectorPlugin,
+    block::BlockPlugin,
     main_camera::MainCameraPlugin,
     player::PlayerPlugin,
-    tile::TilePlugin,
     world_generation::WorldGenerationPlugin,
 };
 
@@ -22,7 +23,7 @@ impl PluginGroup for WorldPlugins {
             .add(TilemapPlugin)
             .add(MainCameraPlugin)
             .add(PlayerPlugin)
-            .add(TilePlugin)
+            .add(BlockPlugin)
             .add(WorldGenerationPlugin)
     }
 }
