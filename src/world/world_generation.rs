@@ -1,5 +1,5 @@
 use {
-    super::block::{self, ForegroundTilemap, BLOCK_LAYER, BLOCK_SIZE},
+    super::block::{self, BLOCK_LAYER, BLOCK_SIZE},
     crate::states::game_state::GameState,
     bevy::prelude::*,
     bevy_ecs_tilemap::prelude::*,
@@ -23,7 +23,7 @@ impl Plugin for WorldGenerationPlugin {
                 apply_system_buffers,
                 create_perlin_map,
                 apply_system_buffers,
-                spawn_tilemap,
+                spawn_background_tilemap,
                 apply_system_buffers,
             )
                 .chain()
@@ -37,6 +37,12 @@ pub struct PerlinMap(pub NoiseMap);
 
 #[derive(Resource)]
 pub struct WorldSeed(pub u32);
+
+#[derive(Component)]
+pub struct BackgroundTilemap;
+
+#[derive(Component)]
+pub struct ForegroundTilemap;
 
 fn generate_world_seed(mut cmds: Commands) {
     cmds.insert_resource(WorldSeed(rand::thread_rng().gen_range(u32::MIN..=u32::MAX)));
@@ -53,7 +59,7 @@ fn create_perlin_map(mut cmds: Commands, seed: Res<WorldSeed>) {
     cmds.insert_resource(PerlinMap(perlin_map));
 }
 
-pub fn spawn_tilemap(mut cmds: Commands, assets: Res<AssetServer>, perlin_map: Res<PerlinMap>) {
+pub fn spawn_background_tilemap(mut cmds: Commands, assets: Res<AssetServer>, perlin_map: Res<PerlinMap>) {
     let tilemap_tex = assets.load("images/tile.png");
     let tilemap_id = cmds.spawn_empty().id();
     let mut tile_storage = TileStorage::empty(TILE_MAP_SIZE);

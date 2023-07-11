@@ -7,6 +7,7 @@ use {
         },
         states::game_state::GameState,
     },
+    super::world_generation::ForegroundTilemap,
     bevy::prelude::*,
     bevy_ecs_tilemap::prelude::*,
     bevy_rapier2d::prelude::*,
@@ -27,9 +28,6 @@ impl Plugin for BlockPlugin {
 
 #[derive(Component)]
 pub struct Block;
-
-#[derive(Component)]
-pub struct ForegroundTilemap;
 
 pub struct TileBreakEvent {
     tile_position: TilePos,

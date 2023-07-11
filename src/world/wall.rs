@@ -2,6 +2,7 @@ use {
     crate::{core::physics::BoundingBox, logic::combat::Health},
     bevy::prelude::*,
     bevy_ecs_tilemap::prelude::*,
+    super::world_generation::BackgroundTilemap,
 };
 
 pub const WALL_SIZE: TilemapTileSize = TilemapTileSize { x: 16., y: 16. };
@@ -15,9 +16,6 @@ impl Plugin for WallPlugin {
 
 #[derive(Component)]
 pub struct Wall;
-
-#[derive(Component)]
-pub struct BackgroundTilemap;
 
 pub fn spawn_wall(
     cmds: &mut Commands,
