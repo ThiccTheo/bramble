@@ -16,7 +16,9 @@ fn tile_spawner(mut tile_spawn_evr: EventReader<TileSpawnEvent>, mut cmds: Comma
         // println!("{pos:?}");
         cmds.spawn((
             Tile,
+            StateScoped(GameState::Playing),
             Collider::cuboid(TILE_SIZE.x / 2., TILE_SIZE.y / 2.),
+			RigidBody::Fixed,
             SpriteBundle {
                 sprite: Sprite {
                     color: Color::Srgba(Srgba::RED),
@@ -30,7 +32,7 @@ fn tile_spawner(mut tile_spawn_evr: EventReader<TileSpawnEvent>, mut cmds: Comma
     }
 }
 
-pub fn plugin(app: &mut App) {
+pub fn tile_plugin(app: &mut App) {
     app.add_event::<TileSpawnEvent>().add_systems(
         Update,
         tile_spawner.run_if(in_state(GameState::Playing).and_then(on_event::<TileSpawnEvent>())),

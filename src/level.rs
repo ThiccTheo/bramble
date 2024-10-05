@@ -4,11 +4,20 @@ use {
         player::PlayerSpawnEvent,
         tile::{TileSpawnEvent, TILE_SIZE},
     },
+    crate::RESOLUTION,
     bevy::prelude::*,
     noise::{core::perlin, permutationtable::PermutationTable, utils::PlaneMapBuilder},
+    static_assertions::const_assert,
+    std::ops::Range,
 };
 
-pub const LEVEL_SIZE: Vec2 = Vec2::new(100., 10.);
+pub const LEVEL_SIZE: Vec2 = Vec2::new(250., 100.);
+const_assert!(
+    LEVEL_SIZE.x * TILE_SIZE.x >= RESOLUTION.x && LEVEL_SIZE.y * TILE_SIZE.y >= RESOLUTION.y
+);
+
+const SKY: Range<usize> = 0..LEVEL_SIZE.y as usize / 3;
+const LAND: Range<usize> = SKY.end..LEVEL_SIZE.y as usize;
 
 fn spawn_level(
     mut tile_spawn_evw: EventWriter<TileSpawnEvent>,
@@ -28,16 +37,16 @@ fn spawn_level(
             ))
             .translation;
 
-            if y >= LEVEL_SIZE.y as usize / 3 {
+            if LAND.contains(&y) && perlin_map.get_value(x, y) > 0.2 {
                 tile_spawn_evw.send(TileSpawnEvent { pos });
             }
-            if y == LEVEL_SIZE.y as usize / 3 - 1 && x == LEVEL_SIZE.x as usize / 2 {
+            if x == LEVEL_SIZE.x as usize / 2 && y == LAND.start - 1 {
                 player_spawn_evw.send(PlayerSpawnEvent { pos });
             }
         }
     }
 }
 
-pub fn plugin(app: &mut App) {
+pub fn level_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Playing), spawn_level);
 }

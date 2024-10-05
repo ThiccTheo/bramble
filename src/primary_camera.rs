@@ -52,7 +52,7 @@ fn clamp_to_level(
     }
 }
 
-pub fn plugin(app: &mut App) {
+pub fn primary_camera_plugin(app: &mut App) {
     app.insert_resource(ClearColor(Color::srgb_u8(208, 187, 148)))
         .add_systems(Startup, |mut cmds: Commands| {
             cmds.spawn((PrimaryCamera, Camera2dBundle::default()));

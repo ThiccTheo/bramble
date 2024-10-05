@@ -6,7 +6,7 @@ pub enum GameState {
     Playing,
 }
 
-pub fn plugin(app: &mut App) {
+pub fn game_state_plugin(app: &mut App) {
     app.insert_state(GameState::Setup)
         .enable_state_scoped_entities::<GameState>()
         .add_systems(

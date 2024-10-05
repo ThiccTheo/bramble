@@ -6,8 +6,14 @@ mod tile;
 
 use {
     bevy::prelude::*, bevy_rapier2d::prelude::*, bevy_tnua::prelude::*,
-    bevy_tnua_rapier2d::TnuaRapier2dPlugin, tile::AVG_TILE_DIM,
+    bevy_tnua_rapier2d::TnuaRapier2dPlugin, leafwing_input_manager::prelude::*,
+    player::PlayerAction, tile::AVG_TILE_DIM,
+    static_assertions::const_assert
 };
+
+const RESOLUTION: Vec2 = Vec2::new(1280., 720.);
+const_assert!(RESOLUTION.x >= 1280. && RESOLUTION.y >= 720.);
+const_assert!(RESOLUTION.x / RESOLUTION.y == 16. / 9.);
 
 fn main() {
     App::new()
@@ -24,16 +30,17 @@ fn main() {
                 DefaultPlugins,
                 RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(AVG_TILE_DIM)
                     .in_fixed_schedule(),
-                //RapierDebugRenderPlugin::default(),
+                RapierDebugRenderPlugin::default(),
                 TnuaRapier2dPlugin::new(FixedUpdate),
                 TnuaControllerPlugin::new(FixedUpdate),
+                InputManagerPlugin::<PlayerAction>::default(),
             ),
             (
-                game_state::plugin,
-                primary_camera::plugin,
-                level::plugin,
-                tile::plugin,
-                player::plugin
+                game_state::game_state_plugin,
+                primary_camera::primary_camera_plugin,
+                level::level_plugin,
+                tile::tile_plugin,
+                player::player_plugin,
             ),
         ))
         .run();
