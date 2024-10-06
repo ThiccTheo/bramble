@@ -13,7 +13,6 @@ pub struct TileSpawnEvent {
 
 fn tile_spawner(mut tile_spawn_evr: EventReader<TileSpawnEvent>, mut cmds: Commands) {
     for &TileSpawnEvent { pos } in tile_spawn_evr.read() {
-        // println!("{pos:?}");
         cmds.spawn((
             Tile,
             StateScoped(GameState::Playing),

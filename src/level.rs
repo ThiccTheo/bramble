@@ -8,15 +8,16 @@ use {
     bevy::prelude::*,
     noise::{core::perlin, permutationtable::PermutationTable, utils::PlaneMapBuilder},
     static_assertions::const_assert,
-    std::ops::Range,
+    std::{ops::Range, path::Path},
 };
 
-pub const LEVEL_SIZE: Vec2 = Vec2::new(250., 100.);
+pub const LEVEL_SIZE: Vec2 = Vec2::new(60., 20.);
 const_assert!(
     LEVEL_SIZE.x * TILE_SIZE.x >= RESOLUTION.x && LEVEL_SIZE.y * TILE_SIZE.y >= RESOLUTION.y
 );
 
 const SKY: Range<usize> = 0..LEVEL_SIZE.y as usize / 3;
+
 const LAND: Range<usize> = SKY.end..LEVEL_SIZE.y as usize;
 
 fn spawn_level(
@@ -26,6 +27,8 @@ fn spawn_level(
     let hasher = PermutationTable::new(0);
     let perlin_map = PlaneMapBuilder::new_fn(|pt| perlin::perlin_2d(pt.into(), &hasher))
         .set_size(LEVEL_SIZE.x as usize, LEVEL_SIZE.y as usize)
+        .set_x_bounds(-5., 5.)
+        .set_y_bounds(-5., 5.)
         .build();
 
     for y in 0..LEVEL_SIZE.y as usize {
@@ -45,6 +48,11 @@ fn spawn_level(
             }
         }
     }
+
+    perlin_map.write_to_file(Path::new(&format!(
+        "{}/assets/noise_map.png",
+        env!("CARGO_MANIFEST_DIR")
+    )));
 }
 
 pub fn level_plugin(app: &mut App) {

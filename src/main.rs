@@ -3,12 +3,13 @@ mod level;
 mod player;
 mod primary_camera;
 mod tile;
+mod boundary;
 
 use {
-    bevy::prelude::*, bevy_rapier2d::prelude::*, bevy_tnua::prelude::*,
-    bevy_tnua_rapier2d::TnuaRapier2dPlugin, leafwing_input_manager::prelude::*,
-    player::PlayerAction, tile::AVG_TILE_DIM,
-    static_assertions::const_assert
+    bevy::prelude::*, bevy_inspector_egui::quick::WorldInspectorPlugin, bevy_rapier2d::prelude::*,
+    bevy_tnua::prelude::*, bevy_tnua_rapier2d::TnuaRapier2dPlugin,
+    leafwing_input_manager::prelude::*, player::PlayerAction, static_assertions::const_assert,
+    tile::AVG_TILE_DIM,
 };
 
 const RESOLUTION: Vec2 = Vec2::new(1280., 720.);
@@ -34,11 +35,13 @@ fn main() {
                 TnuaRapier2dPlugin::new(FixedUpdate),
                 TnuaControllerPlugin::new(FixedUpdate),
                 InputManagerPlugin::<PlayerAction>::default(),
+                WorldInspectorPlugin::new(),
             ),
             (
                 game_state::game_state_plugin,
                 primary_camera::primary_camera_plugin,
                 level::level_plugin,
+                boundary::boundary_plugin,
                 tile::tile_plugin,
                 player::player_plugin,
             ),
