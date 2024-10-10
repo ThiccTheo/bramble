@@ -4,6 +4,7 @@ mod player;
 mod primary_camera;
 mod tile;
 mod boundary;
+mod asset_owner;
 
 use {
     bevy::prelude::*, bevy_inspector_egui::quick::WorldInspectorPlugin, bevy_rapier2d::prelude::*,
@@ -31,7 +32,7 @@ fn main() {
                 DefaultPlugins,
                 RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(AVG_TILE_DIM)
                     .in_fixed_schedule(),
-                RapierDebugRenderPlugin::default(),
+                //RapierDebugRenderPlugin::default(),
                 TnuaRapier2dPlugin::new(FixedUpdate),
                 TnuaControllerPlugin::new(FixedUpdate),
                 InputManagerPlugin::<PlayerAction>::default(),

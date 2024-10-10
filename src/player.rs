@@ -1,5 +1,5 @@
 use {
-    super::{game_state::GameState, tile::TILE_SIZE},
+    super::{asset_owner::AssetOwner, game_state::GameState, tile::TILE_SIZE},
     bevy::prelude::*,
     bevy_rapier2d::prelude::*,
     bevy_tnua::{
@@ -12,8 +12,9 @@ use {
     std::f32::consts::FRAC_PI_4,
 };
 
-const PLAYER_COLLIDER_HALF_HEIGHT: f32 = 8.;
-const PLAYER_COLLIDER_RADIUS: f32 = 10.;
+const PLAYER_SIZE: Vec2 = Vec2::splat(24.);
+const PLAYER_COLLIDER_HALF_HEIGHT: f32 = 1.;
+const PLAYER_COLLIDER_RADIUS: f32 = 8.;
 
 #[derive(Component)]
 pub struct Player;
@@ -32,19 +33,24 @@ pub enum PlayerAction {
     Jump,
 }
 
-fn player_spawner(mut player_spawn_evr: EventReader<PlayerSpawnEvent>, mut cmds: Commands) {
+fn player_spawner(
+    mut player_spawn_evr: EventReader<PlayerSpawnEvent>,
+    mut cmds: Commands,
+    player_tex_atlas_layout: Res<AssetOwner<Player, TextureAtlasLayout>>,
+    player_tex: Res<AssetOwner<Player, Image>>,
+) {
     let &PlayerSpawnEvent { pos } = player_spawn_evr.read().next().unwrap();
     cmds.spawn((
         Player,
         StateScoped(GameState::Playing),
         SpriteBundle {
-            sprite: Sprite {
-                color: Color::Srgba(Srgba::GREEN),
-                custom_size: Some(Vec2::new(20., 60.)),
-                ..default()
-            },
+            texture: player_tex.handle(),
             transform: Transform::from_translation(pos.truncate().extend(4.)),
             ..default()
+        },
+        TextureAtlas {
+            layout: player_tex_atlas_layout.handle(),
+            index: 8,
         },
         InputManagerBundle::with_map(InputMap::new([
             (PlayerAction::Left, KeyCode::KeyA),
@@ -75,6 +81,7 @@ pub fn player_movement(
             &mut TnuaSimpleFallThroughPlatformsHelper,
             &TnuaGhostSensor,
             &mut TnuaProximitySensor,
+            &mut Sprite,
         ),
         With<Player>,
     >,
@@ -86,6 +93,7 @@ pub fn player_movement(
         mut player_ghost_platforms_helper,
         player_ghost_sensor,
         mut player_prox_sensor,
+        mut player_sprite,
     )) = player_qry.get_single_mut()
     else {
         return;
@@ -94,17 +102,19 @@ pub fn player_movement(
     player_kcc.basis(TnuaBuiltinWalk {
         max_slope: FRAC_PI_4,
         spring_dampening: 0.5,
-        float_height: PLAYER_COLLIDER_HALF_HEIGHT + PLAYER_COLLIDER_RADIUS + 14.,
+        float_height: PLAYER_COLLIDER_HALF_HEIGHT + PLAYER_COLLIDER_RADIUS + 1.,
         air_acceleration: 5. * TILE_SIZE.x,
         acceleration: 5. * TILE_SIZE.x,
         desired_velocity: 4.
             * TILE_SIZE.x
             * if player_in.pressed(&PlayerAction::Left) && player_in.released(&PlayerAction::Right)
             {
+                player_sprite.flip_x = true;
                 -Vec3::X
             } else if player_in.pressed(&PlayerAction::Right)
                 && player_in.released(&PlayerAction::Left)
             {
+                player_sprite.flip_x = false;
                 Vec3::X
             } else {
                 Vec3::ZERO
@@ -137,6 +147,25 @@ pub fn player_movement(
 
 pub fn player_plugin(app: &mut App) {
     app.add_event::<PlayerSpawnEvent>()
+        .add_systems(
+            OnEnter(GameState::Setup),
+            |mut cmds: Commands,
+             asset_server: Res<AssetServer>,
+             mut tex_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>| {
+                cmds.insert_resource(AssetOwner::<Player, Image>::new(
+                    asset_server.load("player.png"),
+                ));
+                cmds.insert_resource(AssetOwner::<Player, _>::new(tex_atlas_layouts.add(
+                    TextureAtlasLayout::from_grid(
+                        UVec2::new(PLAYER_SIZE.x as u32, PLAYER_SIZE.y as u32),
+                        9,
+                        3,
+                        None,
+                        None,
+                    ),
+                )));
+            },
+        )
         .add_systems(
             Update,
             player_spawner

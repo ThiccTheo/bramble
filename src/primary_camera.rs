@@ -55,7 +55,11 @@ fn clamp_to_level(
 pub fn primary_camera_plugin(app: &mut App) {
     app.insert_resource(ClearColor(Color::srgb_u8(208, 187, 148)))
         .add_systems(Startup, |mut cmds: Commands| {
-            cmds.spawn((PrimaryCamera, Camera2dBundle::default()));
+            cmds.spawn((PrimaryCamera, {
+                let mut cam = Camera2dBundle::default();
+                cam.projection.scale /= 2.;
+                cam
+            }));
         })
         .add_systems(
             FixedPostUpdate,
