@@ -1,10 +1,10 @@
+mod asset_owner;
+mod boundary;
 mod game_state;
 mod level;
 mod player;
 mod primary_camera;
 mod tile;
-mod boundary;
-mod asset_owner;
 
 use {
     bevy::prelude::*, bevy_inspector_egui::quick::WorldInspectorPlugin, bevy_rapier2d::prelude::*,

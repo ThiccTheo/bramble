@@ -44,25 +44,26 @@ fn tile_spawner(
         tile_pos,
     } in tile_spawn_evr.read()
     {
-        if !tile_map.0[tile_pos.y][tile_pos.x] {
-            cmds.spawn((
-                Tile,
-                StateScoped(GameState::Playing),
-                tile_pos,
-                Collider::cuboid(TILE_SIZE.x / 2., TILE_SIZE.y / 2.),
-                RigidBody::Fixed,
-                SpriteBundle {
-                    texture: tile_tex.handle(),
-                    transform: Transform::from_translation(world_pos),
-                    ..default()
-                },
-                TextureAtlas {
-                    layout: tile_tex_atlas_layout.handle(),
-                    index: 6 * 20 + 2,
-                },
-            ));
-            tile_map.0[tile_pos.y][tile_pos.x] = true;
+        if tile_map.0[tile_pos.y][tile_pos.x] {
+            continue;
         }
+        cmds.spawn((
+            Tile,
+            StateScoped(GameState::Playing),
+            tile_pos,
+            Collider::cuboid(TILE_SIZE.x / 2., TILE_SIZE.y / 2.),
+            RigidBody::Fixed,
+            SpriteBundle {
+                texture: tile_tex.handle(),
+                transform: Transform::from_translation(world_pos),
+                ..default()
+            },
+            TextureAtlas {
+                layout: tile_tex_atlas_layout.handle(),
+                index: 6 * TILE_TEXTURE_ATLAS_DIMS.x as usize + 2,
+            },
+        ));
+        tile_map.0[tile_pos.y][tile_pos.x] = true;
     }
 }
 
@@ -70,6 +71,10 @@ fn update_tile_textures(
     mut tile_qry: Query<(&TilePosition, &mut TextureAtlas), With<Tile>>,
     tile_map: Res<TileMap>,
 ) {
+    if !tile_map.is_changed() {
+        return;
+    };
+
     for (&TilePosition { x, y }, mut tile_tex_atlas) in &mut tile_qry {
         let no_up_neighbor = y != 0 && !tile_map.0[y - 1][x];
         let no_down_neighbor = y != LEVEL_SIZE.y as usize - 1 && !tile_map.0[y + 1][x];
@@ -94,7 +99,7 @@ fn update_tile_textures(
         } else if no_right_neighbor {
             c_idx += 1;
         }
-        tile_tex_atlas.index = r_idx * TILE_TEXTURE_ATLAS_DIMS.y as usize + c_idx;
+        tile_tex_atlas.index = r_idx * TILE_TEXTURE_ATLAS_DIMS.x as usize + c_idx;
     }
 }
 

@@ -8,7 +8,7 @@ impl<T: Component, A: Asset> AssetOwner<T, A> {
         Self(handle, PhantomData)
     }
 
-	pub fn handle(&self) -> Handle<A> {
-		self.0.clone_weak()
-	}
+    pub fn handle(&self) -> Handle<A> {
+        self.0.clone_weak()
+    }
 }

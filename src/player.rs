@@ -62,7 +62,6 @@ fn player_spawner(
         Collider::capsule_y(PLAYER_COLLIDER_HALF_HEIGHT, PLAYER_COLLIDER_RADIUS),
         RigidBody::Dynamic,
         LockedAxes::ROTATION_LOCKED,
-        Friction::default(),
         TnuaRapier2dIOBundle::default(),
         TnuaControllerBundle::default(),
         TnuaSimpleAirActionsCounter::default(),
